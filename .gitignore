@@ -1,0 +1,44 @@
+# ---- Secrets: NEVER commit these ----
+.env
+.env.*
+*.env
+!.env.example
+backend/.env
+backend/.env.*
+frontend/.env
+frontend/.env.*
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ---- Node / Next.js ----
+node_modules/
+.next/
+out/
+build/
+dist/
+.turbo/
+
+# ---- ML artifacts (models are retrained, not committed) ----
+*.pkl
+*.joblib
+*.txt.model
+model_artifacts/
+
+# ---- OS / editor ----
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
+
+# ---- Docker volumes ----
+pgdata/

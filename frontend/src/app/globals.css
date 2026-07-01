@@ -1,0 +1,226 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+:root {
+  --color-navy: #0A2F5E;
+  --color-navy-light: #0D3B75;
+  --color-sky: #1E88E5;
+  --color-sky-light: #42A5F5;
+  --color-orange: #FF6B35;
+  --color-orange-light: #FF8C5A;
+  --color-success: #2E7D32;
+  --color-success-light: #4CAF50;
+  --color-warning: #F57C00;
+  --color-warning-light: #FFA726;
+  --color-error: #C62828;
+  --color-error-light: #EF5350;
+  --color-bg: #050F1E;
+  --color-surface: #0A1929;
+  --color-surface-alt: #0D2137;
+  --color-border: rgba(30, 136, 229, 0.15);
+  --color-text: #E8F1FA;
+  --color-text-muted: #8BAABF;
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-lg: 16px;
+
+  /* --- Phase 1: extended semantic tokens (additive) --- */
+  /* Spacing scale (8pt grid) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+
+  /* Radius scale */
+  --radius-xs: 6px;
+  --radius-pill: 999px;
+
+  /* Elevation / shadow scale (soft, layered) */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.25);
+  --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.30);
+  --shadow-md: 0 6px 16px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.45);
+  --shadow-xl: 0 24px 56px rgba(0, 0, 0, 0.55);
+
+  /* Semantic color aliases (map onto existing palette — no new hues) */
+  --color-primary: var(--color-sky);
+  --color-primary-hover: var(--color-sky-light);
+  --color-accent: var(--color-orange);
+  --color-accent-hover: var(--color-orange-light);
+  --color-card: var(--color-surface-alt);
+  --color-card-hover: #103052;
+  --color-border-light: rgba(30, 136, 229, 0.25);
+  --color-text-primary: var(--color-text);
+  --color-text-secondary: var(--color-text-muted);
+  --color-focus-ring: var(--color-sky);
+  --color-overlay: rgba(5, 15, 30, 0.72);
+}
+
+[data-theme="dark"] {
+  --color-bg: #050F1E;
+  --color-surface: #0A1929;
+  --color-surface-alt: #0D2137;
+  --color-card: #0D2137;
+  --color-card-hover: #103052;
+  --color-border: rgba(30, 136, 229, 0.15);
+  --color-border-light: rgba(30, 136, 229, 0.25);
+  --color-text: #E8F1FA;
+  --color-text-muted: #8BAABF;
+  --color-text-primary: #E8F1FA;
+  --color-text-secondary: #8BAABF;
+  --color-overlay: rgba(5, 15, 30, 0.72);
+}
+
+[data-theme="light"] {
+  --color-bg: #E9EEF3;
+  --color-surface: #F7F9FB;
+  --color-surface-alt: #EDF1F5;
+  --color-card: #F7F9FB;
+  --color-card-hover: #E4EAF0;
+  --color-border: rgba(10, 47, 94, 0.12);
+  --color-border-light: rgba(10, 47, 94, 0.20);
+  --color-text: #0F2438;
+  --color-text-muted: #577089;
+  --color-text-primary: #0F2438;
+  --color-text-secondary: #577089;
+  --color-overlay: rgba(244, 248, 252, 0.75);
+  --shadow-xs: 0 1px 2px rgba(10,47,94,0.06);
+  --shadow-sm: 0 2px 6px rgba(10,47,94,0.08);
+  --shadow-md: 0 6px 16px rgba(10,47,94,0.10);
+  --shadow-lg: 0 12px 32px rgba(10,47,94,0.14);
+  --shadow-xl: 0 24px 56px rgba(10,47,94,0.18);
+}
+
+[data-portal="passenger"] { --color-primary: #1E88E5; --color-primary-hover: #42A5F5; --color-accent: #1565C0; --color-focus-ring: #1E88E5; }
+[data-portal="crew"]      { --color-primary: #F57C00; --color-primary-hover: #FF9800; --color-accent: #E65100; --color-focus-ring: #F57C00; }
+[data-portal="admin"]     { --color-primary: #0F9E78; --color-primary-hover: #1DBE96; --color-accent: #0A6E54; --color-focus-ring: #0F9E78; }
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  background: var(--color-bg);
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Glassmorphism utility */
+.glass {
+  background: var(--color-surface);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--color-border);
+}
+
+.glass-card {
+  background: var(--color-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #1E88E5 0%, #42A5F5 50%, #FF6B35 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Gradient backgrounds */
+.bg-gradient-primary {
+  background: linear-gradient(135deg, var(--color-navy) 0%, #0D2137 100%);
+}
+
+.bg-gradient-sky {
+  background: linear-gradient(135deg, var(--color-sky) 0%, var(--color-sky-light) 100%);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-surface);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-sky);
+  border-radius: 3px;
+}
+
+/* Focus ring */
+:focus-visible {
+  outline: 2px solid var(--color-sky);
+  outline-offset: 2px;
+}
+
+/* Prevent Chrome autofill from overriding dark input background */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--color-text-primary);
+  -webkit-box-shadow: 0 0 0px 1000px var(--color-surface) inset;
+  caret-color: var(--color-text-primary);
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+[data-theme="light"] .glass,
+[data-theme="light"] .glass-card {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: var(--shadow-sm);
+}
+
+/* ===== Light-mode legacy-color overrides (additive, light theme only) ===== */
+/* Dark neutral SURFACES -> light surface */
+[data-theme="light"] .bg-\[\#0A1929\],
+[data-theme="light"] .bg-\[\#050F1E\],
+[data-theme="light"] .bg-\[\#0D2137\] {
+  background-color: var(--color-surface) !important;
+}
+/* Dark navy used for SELECTED/ACTIVE tabs & buttons -> brand blue (so white text shows) */
+[data-theme="light"] .bg-\[\#0A2F5E\],
+[data-theme="light"] .bg-\[\#0D3B75\] {
+  background-color: #1565C0 !important;
+}
+/* Light neutral TEXT -> dark text */
+[data-theme="light"] .text-\[\#E8F1FA\] {
+  color: var(--color-text) !important;
+}
+/* Muted neutral TEXT -> muted dark text */
+[data-theme="light"] .text-\[\#8BAABF\],
+[data-theme="light"] .text-\[\#5C7E97\] {
+  color: var(--color-text-muted) !important;
+}
+/* Fixed bottom action bars / panels that use dark surface -> light, with subtle top border */
+[data-theme="light"] .bg-\[\#0A1929\],
+[data-theme="light"] .bg-\[\#0D2137\] {
+  border-color: var(--color-border) !important;
+}
+
+
+
+

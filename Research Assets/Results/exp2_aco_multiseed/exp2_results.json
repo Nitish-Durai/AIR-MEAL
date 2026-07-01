@@ -1,0 +1,141 @@
+{
+  "experiment": "exp2_aco_multiseed",
+  "run_at": "2026-06-26T16:41:30.426130+00:00",
+  "seeds": [
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51
+  ],
+  "n_flights_evaluated": 8,
+  "n_tasks_evaluated": 480,
+  "sample_is_fixed_across_seeds": true,
+  "baseline_is_deterministic": true,
+  "cost_improvement_pct": {
+    "mean": 10.662,
+    "std": 0.648,
+    "min": 9.33,
+    "max": 11.61,
+    "ci95_low": 10.261,
+    "ci95_high": 11.063,
+    "n_seeds": 10
+  },
+  "violation_reduction_pct": {
+    "mean": 12.606,
+    "std": 2.723,
+    "min": 8.48,
+    "max": 16.36,
+    "ci95_low": 10.918,
+    "ci95_high": 14.294,
+    "n_seeds": 10
+  },
+  "per_seed": [
+    {
+      "seed": 42,
+      "aco_tour_cost": 1885.0,
+      "baseline_tour_cost": 2132.5,
+      "cost_improvement_pct": 11.61,
+      "aco_priority_violations": 146,
+      "baseline_priority_violations": 165,
+      "violation_reduction_pct": 11.52,
+      "n_tasks_evaluated": 480
+    },
+    {
+      "seed": 43,
+      "aco_tour_cost": 1906.5,
+      "baseline_tour_cost": 2132.5,
+      "cost_improvement_pct": 10.6,
+      "aco_priority_violations": 151,
+      "baseline_priority_violations": 165,
+      "violation_reduction_pct": 8.48,
+      "n_tasks_evaluated": 480
+    },
+    {
+      "seed": 44,
+      "aco_tour_cost": 1911.0,
+      "baseline_tour_cost": 2132.5,
+      "cost_improvement_pct": 10.39,
+      "aco_priority_violations": 141,
+      "baseline_priority_violations": 165,
+      "violation_reduction_pct": 14.55,
+      "n_tasks_evaluated": 480
+    },
+    {
+      "seed": 45,
+      "aco_tour_cost": 1915.5,
+      "baseline_tour_cost": 2132.5,
+      "cost_improvement_pct": 10.18,
+      "aco_priority_violations": 148,
+      "baseline_priority_violations": 165,
+      "violation_reduction_pct": 10.3,
+      "n_tasks_evaluated": 480
+    },
+    {
+      "seed": 46,
+      "aco_tour_cost": 1912.0,
+      "baseline_tour_cost": 2132.5,
+      "cost_improvement_pct": 10.34,
+      "aco_priority_violations": 145,
+      "baseline_priority_violations": 165,
+      "violation_reduction_pct": 12.12,
+      "n_tasks_evaluated": 480
+    },
+    {
+      "seed": 47,
+      "aco_tour_cost": 1895.0,
+      "baseline_tour_cost": 2132.5,
+      "cost_improvement_pct": 11.14,
+      "aco_priority_violations": 145,
+      "baseline_priority_violations": 165,
+      "violation_reduction_pct": 12.12,
+      "n_tasks_evaluated": 480
+    },
+    {
+      "seed": 48,
+      "aco_tour_cost": 1894.5,
+      "baseline_tour_cost": 2132.5,
+      "cost_improvement_pct": 11.16,
+      "aco_priority_violations": 140,
+      "baseline_priority_violations": 165,
+      "violation_reduction_pct": 15.15,
+      "n_tasks_evaluated": 480
+    },
+    {
+      "seed": 49,
+      "aco_tour_cost": 1933.5,
+      "baseline_tour_cost": 2132.5,
+      "cost_improvement_pct": 9.33,
+      "aco_priority_violations": 139,
+      "baseline_priority_violations": 165,
+      "violation_reduction_pct": 15.76,
+      "n_tasks_evaluated": 480
+    },
+    {
+      "seed": 50,
+      "aco_tour_cost": 1903.0,
+      "baseline_tour_cost": 2132.5,
+      "cost_improvement_pct": 10.76,
+      "aco_priority_violations": 149,
+      "baseline_priority_violations": 165,
+      "violation_reduction_pct": 9.7,
+      "n_tasks_evaluated": 480
+    },
+    {
+      "seed": 51,
+      "aco_tour_cost": 1895.5,
+      "baseline_tour_cost": 2132.5,
+      "cost_improvement_pct": 11.11,
+      "aco_priority_violations": 138,
+      "baseline_priority_violations": 165,
+      "violation_reduction_pct": 16.36,
+      "n_tasks_evaluated": 480
+    }
+  ],
+  "notes": "Re-runs app.ml.routing evaluation across 10 seeds. Only the ACO RNG seed varies; flight/task sample and baseline are identical every run, so reported variance is ACO stochasticity alone. Cost/distance/violation math uses the project's own imported functions. Nothing written to DB or model_registry; production seed (42) and constants unchanged. Seed 42 row should reproduce the registry's single-run figures."
+}

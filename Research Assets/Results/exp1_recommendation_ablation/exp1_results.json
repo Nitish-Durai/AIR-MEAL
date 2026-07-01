@@ -1,0 +1,28 @@
+{
+  "experiment": "exp1_recommendation_ablation",
+  "run_at": "2026-06-26T16:19:34.973265+00:00",
+  "evaluation": "per-flight (held-out 20% passengers, on their actual flight/cabin)",
+  "waste_signal_methods_observed": {
+    "forecast_inflight": 1944,
+    "lightgbm": 3066
+  },
+  "configs": {
+    "A_ww_0.00": {
+      "waste_weight": 0.0,
+      "ndcg_at_10": 0.1891,
+      "precision_at_5": 0.041,
+      "recall_at_10": 0.2995,
+      "mean_top10_predicted_waste": 0.1276,
+      "n_eval_users": 1279
+    },
+    "B_ww_0.20": {
+      "waste_weight": 0.2,
+      "ndcg_at_10": 0.1878,
+      "precision_at_5": 0.0405,
+      "recall_at_10": 0.2983,
+      "mean_top10_predicted_waste": 0.1282,
+      "n_eval_users": 1279
+    }
+  },
+  "notes": "Re-rank reproduces recommend(): adj = sim*(1+WASTE_WEIGHT*wp), wp = predict_waste().waste_pct/100. Only WASTE_WEIGHT differs between arms. Metrics use the project's own mean_ndcg/precision/recall. Waste method is chosen by each flight's status inside predict_waste()."
+}

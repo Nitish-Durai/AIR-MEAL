@@ -1,0 +1,116 @@
+{
+  "experiment": "exp1_recommendation_ablation_full",
+  "run_at": "2026-06-26T16:29:37.682663+00:00",
+  "evaluation": "per-flight (held-out 20% passengers, on their actual flight/cabin)",
+  "n_eval_users": 1279,
+  "waste_signal_methods_observed": {
+    "forecast_inflight": 1944,
+    "lightgbm": 3066
+  },
+  "sweep": {
+    "WW=0.0": {
+      "waste_weight": 0.0,
+      "ndcg_at_10": 0.1891,
+      "precision_at_5": 0.041,
+      "recall_at_10": 0.2995,
+      "mean_top10_predicted_waste": 0.1276,
+      "n_eval_users": 1279
+    },
+    "WW=0.2": {
+      "waste_weight": 0.2,
+      "ndcg_at_10": 0.1878,
+      "precision_at_5": 0.0405,
+      "recall_at_10": 0.2983,
+      "mean_top10_predicted_waste": 0.1282,
+      "n_eval_users": 1279
+    },
+    "WW=0.5": {
+      "waste_weight": 0.5,
+      "ndcg_at_10": 0.1866,
+      "precision_at_5": 0.0403,
+      "recall_at_10": 0.2959,
+      "mean_top10_predicted_waste": 0.1287,
+      "n_eval_users": 1279
+    },
+    "WW=1.0": {
+      "waste_weight": 1.0,
+      "ndcg_at_10": 0.1852,
+      "precision_at_5": 0.0397,
+      "recall_at_10": 0.292,
+      "mean_top10_predicted_waste": 0.1294,
+      "n_eval_users": 1279
+    },
+    "WW=2.0": {
+      "waste_weight": 2.0,
+      "ndcg_at_10": 0.1829,
+      "precision_at_5": 0.0402,
+      "recall_at_10": 0.2881,
+      "mean_top10_predicted_waste": 0.1307,
+      "n_eval_users": 1279
+    }
+  },
+  "paired_significance_0.0_vs_0.2": {
+    "ndcg": {
+      "mean_A": 0.189113,
+      "mean_B": 0.187783,
+      "n": 1279,
+      "mean_diff": -0.00133,
+      "std_diff": 0.033426,
+      "se_diff": 0.000935,
+      "ci95_low": -0.003162,
+      "ci95_high": 0.000502,
+      "t_stat": -1.4231,
+      "t_pvalue": 0.15495267349477307,
+      "wilcoxon_stat": 901.5,
+      "wilcoxon_pvalue": 0.0056573767403457365,
+      "significance_method": "scipy (paired t + Wilcoxon)"
+    },
+    "prec": {
+      "mean_A": 0.04097,
+      "mean_B": 0.0405,
+      "n": 1279,
+      "mean_diff": -0.000469,
+      "std_diff": 0.012501,
+      "se_diff": 0.00035,
+      "ci95_low": -0.001154,
+      "ci95_high": 0.000216,
+      "t_stat": -1.3421,
+      "t_pvalue": 0.17981462271410625,
+      "wilcoxon_stat": 3.0,
+      "wilcoxon_pvalue": 0.17971249487899976,
+      "significance_method": "scipy (paired t + Wilcoxon)"
+    },
+    "rec": {
+      "mean_A": 0.299453,
+      "mean_B": 0.29828,
+      "n": 1279,
+      "mean_diff": -0.001173,
+      "std_diff": 0.080337,
+      "se_diff": 0.002246,
+      "ci95_low": -0.005576,
+      "ci95_high": 0.00323,
+      "t_stat": -0.5221,
+      "t_pvalue": 0.6017020169164385,
+      "wilcoxon_stat": 33.0,
+      "wilcoxon_pvalue": 0.6276258050283592,
+      "significance_method": "scipy (paired t + Wilcoxon)"
+    },
+    "waste": {
+      "mean_A": 0.127575,
+      "mean_B": 0.128238,
+      "n": 1279,
+      "mean_diff": 0.000663,
+      "std_diff": 0.002581,
+      "se_diff": 7.2e-05,
+      "ci95_low": 0.000522,
+      "ci95_high": 0.000804,
+      "t_stat": 9.1881,
+      "t_pvalue": 1.5688441011206728e-19,
+      "wilcoxon_stat": 0.0,
+      "wilcoxon_pvalue": 1.3098971167929578e-20,
+      "significance_method": "scipy (paired t + Wilcoxon)"
+    }
+  },
+  "scipy_available": true,
+  "notes": "adj = sim*(1+WASTE_WEIGHT*wp); only WASTE_WEIGHT varies. Metrics use the project's own ndcg_at_k/precision_at_k/recall_at_k. Per-user arrays drive a PAIRED test (same users, two conditions). With large n, a significant p-value may still be a practically small effect; report effect size AND significance together. Production WASTE_WEIGHT stays 0.20 (unchanged)."
+}
