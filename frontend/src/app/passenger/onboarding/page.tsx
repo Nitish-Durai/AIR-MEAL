@@ -171,7 +171,7 @@ export default function OnboardingPage() {
   };
 
   const handleNext = () => {
-    if (step < 4) {
+    if (step < 2) {
       setStep(prev => prev + 1);
     } else {
       submitPreferences();
@@ -201,8 +201,15 @@ export default function OnboardingPage() {
         accessToken || undefined
       );
 
-      // Successfully onboarded, route back to passenger home dashboard
-      router.push("/passenger");
+      // Route to the boarded flight's menu (read the session the board step saved).
+      const fId = typeof window !== "undefined" ? localStorage.getItem("airmeal_flight_id") : null;
+      const cClass = typeof window !== "undefined" ? localStorage.getItem("airmeal_cabin_class") : null;
+      const seat = typeof window !== "undefined" ? localStorage.getItem("airmeal_seat_number") : null;
+      if (fId) {
+        router.push(`/passenger/menu?flight_id=${fId}&cabin_class=${cClass ?? ""}&seat_number=${seat ?? ""}`);
+      } else {
+        router.push("/passenger");
+      }
     } catch (err) {
       console.error("Failed to update preferences profile:", err);
       if (err instanceof ApiError) {
@@ -254,16 +261,16 @@ export default function OnboardingPage() {
       
       {/* Step Indicator */}
       <div className="mb-6 flex items-center justify-between">
-        <span className="text-xs font-semibold text-[#8BAABF]">Step {step} of 4</span>
+        <span className="text-xs font-semibold text-[#8BAABF]">Step {step} of 2</span>
         <div className="flex gap-1.5">
-          {[1, 2, 3, 4].map(s => (
+          {[1, 2].map(s => (
             <div
               key={s}
               className={`h-1.5 w-6 rounded-full transition-colors ${
                 s === step
-                  ? "bg-[#1E88E5]"
+                  ? "bg-[#64B5F6]"
                   : s < step
-                  ? "bg-[#1E88E5]"
+                  ? "bg-[#64B5F6]"
                   : "bg-[rgba(30,136,229,0.15)]"
               }`}
             />
@@ -302,19 +309,19 @@ export default function OnboardingPage() {
                   onClick={() => toggleDiet(opt.key)}
                   className={`w-full p-3 rounded-lg border text-left flex justify-between items-center transition-all cursor-pointer ${
                     isActive
-                      ? "bg-[#1E88E5] border-[#1E88E5] text-white"
-                      : "bg-[#050F1E] border-[rgba(30,136,229,0.1)] hover:border-[rgba(30,136,229,0.3)]"
+                      ? "bg-[rgba(76,175,80,0.15)] border-[#4CAF50] text-[#4CAF50]"
+                      : "bg-[#050F1E] border-[rgba(30,136,229,0.1)] hover:border-[rgba(76,175,80,0.5)]"
                   }`}
                   style={{ minHeight: "44px" }}
                 >
                   <div>
                     <p className="font-semibold text-xs text-inherit">{opt.label}</p>
-                    <p className={`text-[10px] mt-0.5 ${isActive ? "text-white/85" : "text-[#8BAABF]"}`}>{opt.desc}</p>
+                    <p className={`text-[10px] mt-0.5 ${isActive ? "text-[#4CAF50]/80" : "text-[#8BAABF]"}`}>{opt.desc}</p>
                   </div>
                   {isActive && (
-                    <div className="w-5 h-5 rounded-full bg-[#1E88E5] flex items-center justify-center flex-shrink-0">
-                      <Check className="w-3.5 h-3.5 text-white" />
-                    </div>
+                    <span className="text-[9px] uppercase font-bold bg-[#4CAF50] text-white px-1.5 py-0.5 rounded-full flex-shrink-0">
+                      Selected
+                    </span>
                   )}
                 </button>
               );
@@ -356,69 +363,9 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* Step 3: Cuisines */}
-        {step === 3 && (
-          <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 pr-1">
-            {CUISINES.map(opt => {
-              const val = cuisinePrefs[opt.key];
-              return (
-                <div key={opt.key} className="space-y-1 border-b border-[rgba(30,136,229,0.05)] pb-3">
-                  <div className="flex justify-between items-center text-xs">
-                    <div>
-                      <span className="font-semibold text-[#E8F1FA]">{opt.label}</span>
-                      <span className="text-[10px] text-[#8BAABF] block">{opt.desc}</span>
-                    </div>
-                    <span className="font-bold text-[#1E88E5]">{(val * 100).toFixed(0)}%</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.1"
-                      value={val}
-                      onChange={(e) => handleCuisineChange(opt.key, parseFloat(e.target.value))}
-                      className="w-full h-2 bg-[#050F1E] rounded-lg appearance-none cursor-pointer accent-[#1E88E5]"
-                      style={{ minHeight: "44px" }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
 
-        {/* Step 4: Portion */}
-        {step === 4 && (
-          <div className="w-full space-y-3">
-            {PORTIONS.map(opt => {
-              const isActive = portionPref === opt.key;
-              return (
-                <button
-                  type="button"
-                  key={opt.key}
-                  onClick={() => setPortionPref(opt.key)}
-                  className={`w-full p-4 rounded-lg border text-left flex justify-between items-center transition-all cursor-pointer ${
-                    isActive
-                      ? "bg-[#1E88E5] border-[#1E88E5] text-white"
-                      : "bg-[#050F1E] border-[rgba(30,136,229,0.1)] hover:border-[rgba(30,136,229,0.3)]"
-                  }`}
-                  style={{ minHeight: "44px" }}
-                >
-                  <div>
-                    <p className="font-semibold text-xs text-inherit">{opt.label}</p>
-                    <p className={`text-[10px] mt-0.5 ${isActive ? "text-white/85" : "text-[#8BAABF]"}`}>{opt.desc}</p>
-                  </div>
-                  {isActive && (
-                    <div className="w-5 h-5 rounded-full bg-[#1E88E5] flex items-center justify-center flex-shrink-0">
-                      <Check className="w-3.5 h-3.5 text-white" />
-                    </div>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        )}
+
+
 
       </div>
 
@@ -457,8 +404,8 @@ export default function OnboardingPage() {
             </>
           ) : (
             <>
-              <span>{step === 4 ? "Finish" : "Next"}</span>
-              {step < 4 && <ChevronRight className="w-4 h-4" />}
+              <span>{step === 2 ? "Finish" : "Next"}</span>
+              {step < 2 && <ChevronRight className="w-4 h-4" />}
             </>
           )}
         </button>

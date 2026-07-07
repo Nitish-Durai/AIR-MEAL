@@ -100,7 +100,7 @@
   --shadow-xl: 0 24px 56px rgba(10,47,94,0.18);
 }
 
-[data-portal="passenger"] { --color-primary: #1E88E5; --color-primary-hover: #42A5F5; --color-accent: #1565C0; --color-focus-ring: #1E88E5; }
+[data-portal="passenger"] { --color-primary: #64B5F6; --color-primary-hover: #90CAF9; --color-accent: #1E88E5; --color-focus-ring: #64B5F6; }
 [data-portal="crew"]      { --color-primary: #F57C00; --color-primary-hover: #FF9800; --color-accent: #E65100; --color-focus-ring: #F57C00; }
 [data-portal="admin"]     { --color-primary: #0F9E78; --color-primary-hover: #1DBE96; --color-accent: #0A6E54; --color-focus-ring: #0F9E78; }
 

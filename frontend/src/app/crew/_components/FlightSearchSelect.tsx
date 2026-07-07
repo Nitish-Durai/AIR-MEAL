@@ -41,30 +41,30 @@ export function FlightSearchSelect({ flights, value, onSelect }: Props) {
       <button
         type="button"
         onClick={() => { setOpen((o) => !o); setQuery(""); }}
-        className="h-9 w-full px-3 flex items-center justify-between gap-2 bg-[#0A1929] border border-[rgba(30,136,229,0.15)] rounded-lg text-xs text-[#E8F1FA] focus:outline-none focus:border-[#1E88E5]"
+        className="h-11 w-full px-3.5 flex items-center justify-between gap-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-sm text-[var(--color-text)] shadow-sm transition-all duration-200 hover:border-[var(--color-primary)] focus:outline-none focus:border-[var(--color-primary)]"
         style={{ minHeight: "44px" }}
       >
         <span className="truncate">{label}</span>
-        <ChevronDown className="w-4 h-4 text-[#8BAABF] flex-shrink-0" />
+        <ChevronDown className="w-4 h-4 text-[var(--color-text-muted)] flex-shrink-0" />
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-1 w-full bg-[#0A1929] border border-[rgba(30,136,229,0.25)] rounded-lg shadow-2xl overflow-hidden">
-          <div className="flex items-center gap-2 px-3 py-2 border-b border-[rgba(30,136,229,0.15)]">
-            <Search className="w-3.5 h-3.5 text-[#8BAABF]" />
+        <div className="absolute z-50 mt-1 w-full bg-[var(--color-card)] border border-[var(--color-border)] rounded-[var(--radius)] shadow-xl overflow-hidden">
+          <div className="flex items-center gap-2 px-3.5 py-2.5 border-b border-[var(--color-border)] bg-[var(--color-surface)]">
+            <Search className="w-4 h-4 text-[var(--color-text-muted)] flex-shrink-0" />
             <input
               autoFocus
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search flight (e.g. SV200)…"
-              className="w-full bg-transparent text-xs text-[#E8F1FA] placeholder-[#5C7E97] focus:outline-none"
+              className="w-full bg-transparent text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none"
             />
           </div>
           <div className="max-h-64 overflow-y-auto">
             <button
               type="button"
               onClick={() => { onSelect(""); setOpen(false); }}
-              className="w-full text-left px-3 py-2 text-xs text-[#8BAABF] hover:bg-[rgba(30,136,229,0.1)]"
+              className="w-full text-left px-3.5 py-2.5 text-sm text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] transition-colors"
             >
               -- Select Flight --
             </button>
@@ -73,13 +73,13 @@ export function FlightSearchSelect({ flights, value, onSelect }: Props) {
                 key={f.id}
                 type="button"
                 onClick={() => { onSelect(f.id); setOpen(false); }}
-                className={`w-full text-left px-3 py-2 text-xs hover:bg-[rgba(30,136,229,0.1)] ${f.id === value ? "text-[#1E88E5] font-bold" : "text-[#E8F1FA]"}`}
+                className={`w-full text-left px-3.5 py-2.5 text-sm hover:bg-[var(--color-surface-alt)] transition-colors ${f.id === value ? "text-[var(--color-primary)] font-bold bg-[var(--color-primary)]/8" : "text-[var(--color-text)]"}`}
               >
                 {`${f.flight_number} (${f.origin}→${f.destination}, ${f.status})`}
               </button>
             ))}
             {filtered.length === 0 && (
-              <div className="px-3 py-3 text-xs text-[#5C7E97]">No flights match.</div>
+              <div className="px-3.5 py-3 text-sm text-[var(--color-text-muted)]">No flights match.</div>
             )}
           </div>
         </div>

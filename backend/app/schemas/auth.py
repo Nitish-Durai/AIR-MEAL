@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field, field_validator
 
 
 class RegisterRequest(BaseModel):
-    pnr: str = Field(min_length=1, max_length=20)
+    pnr: Optional[str] = Field(None, max_length=20)
     first_name: str = Field(min_length=1, max_length=100)
     last_name: str = Field(min_length=1, max_length=100)
     email: str = Field(min_length=3, max_length=254)
@@ -59,3 +59,18 @@ class MeResponse(BaseModel):
     email: str
     role: str
     name: str
+
+
+class BoardRequest(BaseModel):
+    pnr: str = Field(min_length=1, max_length=20)
+    last_name: str = Field(min_length=1, max_length=100)
+
+
+class BoardResponse(BaseModel):
+    flight_id: uuid.UUID
+    flight_number: str
+    origin: str
+    destination: str
+    seat_number: str
+    cabin_class: str
+    status: str

@@ -108,12 +108,12 @@ export default function PassengerLoginPage() {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-6" >
+    <div data-portal="passenger" className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-6" >
       <canvas ref={canvasRef} aria-hidden className="absolute inset-0 pointer-events-none w-full h-full" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(30,136,229,0.18)_0%,transparent_70%)]" />
 
       <div className="relative flex w-full max-w-md flex-col rounded-[var(--radius-lg)] border border-white/12 bg-white/[0.04] p-9 shadow-[var(--shadow-xl)] backdrop-blur-2xl transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:shadow-[0_20px_50px_rgba(30,136,229,0.15)]">
-        <div className="mb-5 flex h-14 w-14 items-center justify-center self-center rounded-full bg-[linear-gradient(135deg,#1E88E5,#0A2F5E)] text-white">
+        <div className="mb-5 flex h-14 w-14 items-center justify-center self-center rounded-full bg-[linear-gradient(135deg,#64B5F6,#1E88E5)] text-white">
           <Luggage className="h-6 w-6" />
         </div>
         <h1 className="mb-1.5 text-center text-2xl font-bold tracking-tight text-[var(--color-text-primary)]">

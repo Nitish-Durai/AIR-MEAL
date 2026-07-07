@@ -112,7 +112,7 @@ export default function AdminLoginPage() {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(30,136,229,0.18)_0%,transparent_70%)]" />
 
       <div className="relative flex w-full max-w-md flex-col rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-9 shadow-[var(--shadow-xl)] backdrop-blur-2xl transition-all duration-300 hover:-translate-y-1 hover:border-[var(--color-border-light)] hover:shadow-[0_20px_50px_rgba(99,102,241,0.15)]">
-        <div className="mb-5 flex h-14 w-14 items-center justify-center self-center rounded-full bg-[linear-gradient(135deg,#6366F1,#4338CA)] text-white">
+        <div className="mb-5 flex h-14 w-14 items-center justify-center self-center rounded-full bg-[linear-gradient(135deg,#818CF8,#6366F1)] text-white">
           <Shield className="h-6 w-6" />
         </div>
         <h1 className="mb-1.5 text-center text-2xl font-bold tracking-tight text-[var(--color-text-primary)]">
@@ -178,7 +178,7 @@ export default function AdminLoginPage() {
             type="submit"
             size="lg"
             loading={loading}
-            className="mt-1.5 w-full bg-[linear-gradient(135deg,#6366F1,#4338CA)] text-white hover:opacity-90"
+            className="mt-1.5 w-full bg-[#818CF8] text-white hover:bg-[#6366F1]"
           >
             {loading ? "Signing in..." : "Sign in"}
           </Button>

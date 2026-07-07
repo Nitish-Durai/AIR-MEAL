@@ -8,6 +8,7 @@ import { useOrderSocket } from "@/lib/ws";
 import { useCrewFlights } from "./_lib/useCrewFlights";
 import { FlightSearchSelect } from "./_components/FlightSearchSelect";
 import Link from "next/link";
+import { SearchBar } from "@/components/ui/search-bar";
 import {
   Loader2,
   AlertTriangle,
@@ -173,7 +174,7 @@ function CrewDashboardContent() {
     });
 
   return (
-    <div className="min-h-screen text-[#E8F1FA] font-sans pb-12">
+    <div data-portal="crew" className="min-h-screen font-sans pb-12">
       
       {/* Top Banner Alert */}
       {hasCriticalTask && (
@@ -341,15 +342,12 @@ function CrewDashboardContent() {
           /* Tablet/Desktop task board grids */
           <>
             <div className="flex items-center gap-2 mb-4 mt-2">
-              <div className="flex items-center gap-2 px-3 h-10 bg-[#0A1929] border border-[rgba(30,136,229,0.15)] rounded-lg flex-1 max-w-xs">
-                <Search className="w-4 h-4 text-[#8BAABF]" />
-                <input
+                <SearchBar
                   value={seatSearch}
-                  onChange={e => setSeatSearch(e.target.value)}
+                  onValueChange={setSeatSearch}
                   placeholder="Search seat (e.g. Y11C)…"
-                  className="w-full bg-transparent text-sm text-[#E8F1FA] placeholder-[#5C7E97] focus:outline-none"
+                  containerClassName="flex-1 max-w-xs"
                 />
-              </div>
               {seatSearch && (
                 <span className="text-xs text-[#8BAABF]">{tasksFiltered.length} match(es)</span>
               )}

@@ -8,6 +8,7 @@ import { AdminHeader } from "./_components/AdminHeader";
 import { api, ApiError } from "@/lib/api";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { SearchBar } from "@/components/ui/search-bar";
 import {
   Loader2,
   AlertTriangle,
@@ -444,16 +445,11 @@ function AdminDashboardContent() {
               </div>
 
               <div className="px-4 py-3 border-b border-[rgba(30,136,229,0.1)] space-y-3">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
-                  <input
-                    type="text"
-                    value={flightSearch}
-                    onChange={(e) => setFlightSearch(e.target.value)}
-                    placeholder="Search flight number, route, or aircraft…"
-                    className="w-full h-10 pl-9 pr-3 rounded-lg text-sm bg-[var(--color-bg)] border border-[var(--color-border)] text-[var(--color-text)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[#1E88E5] transition-colors"
-                  />
-                </div>
+                <SearchBar
+                  value={flightSearch}
+                  onValueChange={setFlightSearch}
+                  placeholder="Search flight number, route, or aircraft…"
+                />
                 <div className="flex flex-wrap gap-1.5">
                   {FLIGHT_STATUSES.map((s) => (
                     <button

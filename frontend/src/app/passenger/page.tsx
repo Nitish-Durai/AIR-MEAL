@@ -22,21 +22,22 @@ export default function PassengerPage() {
   const [activeSeatNumber, setActiveSeatNumber] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // Form states
-  interface FlightOpt { id: string; flight_number: string; origin: string; destination: string; status: string; }
-  const [flights, setFlights] = useState<FlightOpt[]>([]);
-  const [flightQuery, setFlightQuery] = useState("");
-  const [flightOpen, setFlightOpen] = useState(false);
-  const [selectedFlight, setSelectedFlight] = useState<FlightOpt | null>(null);
-  const [selectedCabinClass, setSelectedCabinClass] = useState("economy");
-  const [seatInput, setSeatInput] = useState("");
+  // Board form state (PNR + last name)
+  const [pnrInput, setPnrInput] = useState("");
+  const [lastNameInput, setLastNameInput] = useState("");
+  const [boarding, setBoarding] = useState(false);
   const [formError, setFormError] = useState("");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      setActiveFlightId(localStorage.getItem("airmeal_flight_id"));
-      setActiveCabinClass(localStorage.getItem("airmeal_cabin_class"));
-      setActiveSeatNumber(localStorage.getItem("airmeal_seat_number"));
+      // Always start a fresh boarding session: clear any stored flight so the
+      // PNR + last name board form is shown on every visit to this page.
+      localStorage.removeItem("airmeal_flight_id");
+      localStorage.removeItem("airmeal_cabin_class");
+      localStorage.removeItem("airmeal_seat_number");
+      setActiveFlightId(null);
+      setActiveCabinClass(null);
+      setActiveSeatNumber(null);
     }
   }, []);
 
@@ -96,36 +97,50 @@ export default function PassengerPage() {
     return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", resize); };
   }, []);
 
-  useEffect(() => {
-    if (!accessToken) return;
-    api.get<{ data: FlightOpt[] }>("/api/v1/flights", accessToken)
-      .then(res => setFlights(res.data || []))
-      .catch(() => setFlights([]));
-  }, [accessToken]);
+  interface BoardResp {
+    flight_id: string;
+    flight_number: string;
+    origin: string;
+    destination: string;
+    seat_number: string;
+    cabin_class: string;
+    status: string;
+  }
 
-  const handleStartSession = (e: React.FormEvent) => {
+  const handleBoard = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError("");
 
-    const flightId = selectedFlight?.id || "";
-    if (!flightId) {
-      setFormError("Please search and select your flight.");
+    if (!pnrInput.trim()) {
+      setFormError("Please enter your booking reference (PNR).");
       return;
     }
-    if (!seatInput.trim()) {
-      setFormError("Please enter your seat number (e.g. 12A, 34C).");
+    if (!lastNameInput.trim()) {
+      setFormError("Please enter the last name on the booking.");
+      return;
+    }
+    if (!accessToken) {
+      setFormError("Your session expired. Please log in again.");
       return;
     }
 
-    // Persist details locally
-    localStorage.setItem("airmeal_flight_id", flightId);
-    localStorage.setItem("airmeal_cabin_class", selectedCabinClass);
-    localStorage.setItem("airmeal_seat_number", seatInput.trim());
-
-    // Route to menu page
-    router.push(
-      `/passenger/menu?flight_id=${flightId}&cabin_class=${selectedCabinClass}&seat_number=${seatInput.trim()}`
-    );
+    setBoarding(true);
+    try {
+      const res = await api.post<BoardResp>(
+        "/auth/board",
+        { pnr: pnrInput.trim(), last_name: lastNameInput.trim() },
+        accessToken,
+      );
+      localStorage.setItem("airmeal_flight_id", res.flight_id);
+      localStorage.setItem("airmeal_cabin_class", res.cabin_class);
+      localStorage.setItem("airmeal_seat_number", res.seat_number);
+      router.push("/passenger/onboarding");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Could not find that booking.";
+      setFormError(msg);
+    } finally {
+      setBoarding(false);
+    }
   };
 
   const handleClearSession = () => {
@@ -136,12 +151,6 @@ export default function PassengerPage() {
     setActiveCabinClass(null);
     setActiveSeatNumber(null);
   };
-
-  const flightFiltered = flights.filter(f => {
-    const q = flightQuery.trim().toLowerCase();
-    if (!q) return true;
-    return `${f.flight_number} ${f.origin} ${f.destination} ${f.status}`.toLowerCase().includes(q);
-  });
 
   return (
     <div className="min-h-screen flex flex-col justify-between py-12 px-4 font-sans text-[var(--color-text)] relative">
@@ -286,83 +295,32 @@ export default function PassengerPage() {
               </div>
             </div>
           ) : (
-            /* Form to select flight and seat details */
-            <form onSubmit={handleStartSession} className="space-y-4">
-              <div className="relative">
+            /* Board form: PNR + last name */
+            <form onSubmit={handleBoard} className="space-y-4">
+              <div>
                 <label className="text-xs font-semibold text-[#8BAABF] uppercase tracking-wider block mb-1.5">
-                  Select Your Flight
+                  Booking Reference (PNR)
                 </label>
-                <button
-                  type="button"
-                  onClick={() => { setFlightOpen(o => !o); setFlightQuery(""); }}
-                  className="w-full h-11 px-3 flex items-center justify-between gap-2 bg-[var(--color-surface)] border border-[rgba(30,136,229,0.15)] rounded-lg text-sm text-[var(--color-text)] focus:outline-none focus:border-[#1E88E5]"
-                >
-                  <span className={selectedFlight ? "" : "text-[#8BAABF]"}>
-                    {selectedFlight
-                      ? `${selectedFlight.flight_number} (${selectedFlight.origin}→${selectedFlight.destination}, ${selectedFlight.status})`
-                      : "Search and select your flight"}
-                  </span>
-                  <ChevronDown className="w-4 h-4 text-[#8BAABF] flex-shrink-0" />
-                </button>
-                {flightOpen && (
-                  <div className="absolute z-50 mt-1 w-full bg-[var(--color-surface)] border border-[rgba(30,136,229,0.25)] rounded-lg shadow-2xl overflow-hidden">
-                    <div className="flex items-center gap-2 px-3 py-2 border-b border-[rgba(30,136,229,0.15)]">
-                      <Search className="w-3.5 h-3.5 text-[#8BAABF]" />
-                      <input
-                        autoFocus
-                        value={flightQuery}
-                        onChange={e => setFlightQuery(e.target.value)}
-                        placeholder="Search flight (e.g. SV230)…"
-                        className="w-full bg-transparent text-sm text-[var(--color-text)] placeholder-[#5C7E97] focus:outline-none"
-                      />
-                    </div>
-                    <div className="max-h-60 overflow-y-auto">
-                      {flightFiltered.map(f => (
-                        <button
-                          key={f.id}
-                          type="button"
-                          onClick={() => { setSelectedFlight(f); setFlightOpen(false); }}
-                          className="w-full text-left px-3 py-2 text-sm text-[var(--color-text)] hover:bg-[rgba(30,136,229,0.1)]"
-                        >
-                          {`${f.flight_number} (${f.origin}→${f.destination}, ${f.status})`}
-                        </button>
-                      ))}
-                      {flightFiltered.length === 0 && (
-                        <div className="px-3 py-3 text-xs text-[#5C7E97]">No flights match.</div>
-                      )}
-                    </div>
-                  </div>
-                )}
+                <input
+                  type="text"
+                  placeholder="e.g. SV2K9C"
+                  value={pnrInput}
+                  onChange={(e) => setPnrInput(e.target.value.toUpperCase())}
+                  className="w-full h-11 px-3 bg-[var(--color-surface)] border border-[rgba(30,136,229,0.15)] rounded-lg text-sm text-[var(--color-text)] placeholder-[#8BAABF] focus:outline-none focus:border-[#1E88E5] uppercase tracking-widest"
+                />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-semibold text-[#8BAABF] uppercase tracking-wider block mb-1.5">
-                    Cabin Class
-                  </label>
-                  <select
-                    value={selectedCabinClass}
-                    onChange={(e) => setSelectedCabinClass(e.target.value)}
-                    className="w-full h-11 px-3 bg-[var(--color-surface)] border border-[rgba(30,136,229,0.15)] rounded-lg text-sm text-[var(--color-text)] focus:outline-none focus:border-[#1E88E5] capitalize"
-                  >
-                    <option value="economy">Economy</option>
-                    <option value="business">Business</option>
-                    <option value="first">First Class</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold text-[#8BAABF] uppercase tracking-wider block mb-1.5">
-                    Seat Number
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. 12A, 34C"
-                    value={seatInput}
-                    onChange={(e) => setSeatInput(e.target.value)}
-                    className="w-full h-11 px-3 bg-[var(--color-surface)] border border-[rgba(30,136,229,0.15)] rounded-lg text-sm text-[var(--color-text)] placeholder-[#8BAABF] focus:outline-none focus:border-[#1E88E5] uppercase"
-                  />
-                </div>
+              <div>
+                <label className="text-xs font-semibold text-[#8BAABF] uppercase tracking-wider block mb-1.5">
+                  Last Name on Booking
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Tang"
+                  value={lastNameInput}
+                  onChange={(e) => setLastNameInput(e.target.value)}
+                  className="w-full h-11 px-3 bg-[var(--color-surface)] border border-[rgba(30,136,229,0.15)] rounded-lg text-sm text-[var(--color-text)] placeholder-[#8BAABF] focus:outline-none focus:border-[#1E88E5]"
+                />
               </div>
 
               {formError && (
@@ -372,64 +330,18 @@ export default function PassengerPage() {
               )}
 
               <div className="flex flex-col gap-2 pt-2">
-                <Link
-                  href="/passenger/onboarding"
-                  className="w-full flex items-center justify-center gap-2 h-11 font-semibold rounded-lg text-sm cursor-pointer select-none"
-                  style={{
-                    display: "flex",
-                    background: "rgba(30,136,229,0.12)",
-                    border: "1px solid #1E88E5",
-                    color: "#1E88E5",
-                    boxShadow: "none",
-                    transform: "translateY(0)",
-                    transition: "transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease",
-                  }}
-                  onMouseEnter={(e) => {
-                    const el = e.currentTarget as HTMLAnchorElement;
-                    el.style.transform = "translateY(-3px)";
-                    el.style.boxShadow = "0 8px 28px rgba(30,136,229,0.45)";
-                    el.style.borderColor = "#42a5f5";
-                    el.style.background = "rgba(30,136,229,0.28)";
-                  }}
-                  onMouseLeave={(e) => {
-                    const el = e.currentTarget as HTMLAnchorElement;
-                    el.style.transform = "translateY(0)";
-                    el.style.boxShadow = "none";
-                    el.style.borderColor = "#1E88E5";
-                    el.style.background = "rgba(30,136,229,0.12)";
-                  }}
-                >
-                  <Settings className="w-4 h-4" />
-                  <span>Edit Dietary Preferences</span>
-                </Link>
-
                 <button
                   type="submit"
-                  className="w-full flex items-center justify-center gap-2 h-11 font-semibold rounded-lg text-sm cursor-pointer select-none"
+                  disabled={boarding}
+                  className="w-full flex items-center justify-center gap-2 h-11 font-bold rounded-lg text-sm cursor-pointer select-none disabled:opacity-60"
                   style={{
-                    background: "#1E88E5",
-                    border: "1px solid #1E88E5",
-                    color: "white",
-                    boxShadow: "none",
-                    transform: "translateY(0)",
-                    transition: "transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease",
-                  }}
-                  onMouseEnter={(e) => {
-                    const el = e.currentTarget as HTMLButtonElement;
-                    el.style.transform = "translateY(-3px)";
-                    el.style.boxShadow = "0 10px 32px rgba(30,136,229,0.55)";
-                    el.style.background = "#1565C0";
-                    el.style.borderColor = "#1565C0";
-                  }}
-                  onMouseLeave={(e) => {
-                    const el = e.currentTarget as HTMLButtonElement;
-                    el.style.transform = "translateY(0)";
-                    el.style.boxShadow = "none";
-                    el.style.background = "#1E88E5";
-                    el.style.borderColor = "#1E88E5";
+                    background: "#90CAF9",
+                    border: "1px solid #64B5F6",
+                    color: "#0A2F5E",
+                    transition: "transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease",
                   }}
                 >
-                  <span>Browse Menu</span>
+                  <span>{boarding ? "Finding your flight\u2026" : "Board Flight"}</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>

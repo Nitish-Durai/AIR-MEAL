@@ -17,7 +17,11 @@ from app.core.security import (
 from app.db.session import get_db
 from app.models.crew import CrewMember
 from app.models.passenger import Passenger, PassengerProfile
+from app.models.booking import Booking
+from app.models.flight import Flight
 from app.schemas.auth import (
+    BoardRequest,
+    BoardResponse,
     LoginRequest,
     MeResponse,
     RefreshRequest,
@@ -39,11 +43,18 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> TokenRe
 
     if db.scalar(select(Passenger).where(Passenger.email == payload.email)):
         raise HTTPException(status.HTTP_409_CONFLICT, "Email already registered")
-    if db.scalar(select(Passenger).where(Passenger.pnr == payload.pnr)):
-        raise HTTPException(status.HTTP_409_CONFLICT, "PNR already registered")
+
+    # PNR is not collected at registration anymore (boarding uses the bookings table).
+    # Generate a unique placeholder so the NOT NULL / UNIQUE account column stays valid.
+    account_pnr = (payload.pnr or "").strip().upper()
+    if account_pnr:
+        if db.scalar(select(Passenger).where(Passenger.pnr == account_pnr)):
+            raise HTTPException(status.HTTP_409_CONFLICT, "PNR already registered")
+    else:
+        account_pnr = f"ACCT{uuid.uuid4().hex[:12].upper()}"
 
     passenger = Passenger(
-        pnr=payload.pnr,
+        pnr=account_pnr,
         first_name=payload.first_name,
         last_name=payload.last_name,
         dob=payload.dob,
@@ -165,6 +176,50 @@ def refresh_tokens(payload: RefreshRequest, db: Session = Depends(get_db)) -> To
 # ---------------------------------------------------------------------------
 # Current user info
 # ---------------------------------------------------------------------------
+
+@router.post("/board", response_model=BoardResponse)
+def board(
+    payload: BoardRequest,
+    current_user: CurrentUser = Depends(require_role("passenger")),
+    db: Session = Depends(get_db),
+) -> BoardResponse:
+    """Resolve a PNR + booking last name to a flight the passenger is on.
+
+    Requires an authenticated passenger (account login). The PNR + last name are
+    matched against the bookings table; the last name must match the BOOKING's
+    passenger, real-airline style. Returns the flight context so the frontend can
+    load that flight's menu and recommendations.
+    """
+    pnr = payload.pnr.strip().upper()
+    last_name = payload.last_name.strip()
+
+    booking = db.scalar(select(Booking).where(Booking.pnr == pnr))
+    if not booking:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Booking reference not found")
+
+    booked_passenger = db.scalar(
+        select(Passenger).where(Passenger.id == booking.passenger_id)
+    )
+    if not booked_passenger or booked_passenger.last_name.strip().lower() != last_name.lower():
+        raise HTTPException(
+            status.HTTP_401_UNAUTHORIZED,
+            "Last name does not match this booking reference",
+        )
+
+    flight = db.scalar(select(Flight).where(Flight.id == booking.flight_id))
+    if not flight:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Flight not found for this booking")
+
+    return BoardResponse(
+        flight_id=flight.id,
+        flight_number=flight.flight_number,
+        origin=flight.origin,
+        destination=flight.destination,
+        seat_number=booking.seat_number,
+        cabin_class=booking.cabin_class,
+        status=flight.status,
+    )
+
 
 @router.get("/me", response_model=MeResponse)
 def me(current_user: CurrentUser = Depends(get_current_user)) -> MeResponse:

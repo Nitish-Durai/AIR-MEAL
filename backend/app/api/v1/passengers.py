@@ -4,9 +4,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+import numpy as np
+
 from app.core.deps import CurrentUser, require_role
 from app.db.session import get_db
-from app.models.passenger import PassengerProfile
+from app.models.passenger import Passenger, PassengerProfile
+from app.ml.data_gen import _passenger_embedding
 from app.schemas.api_v1 import (
     PassengerProfileResponse,
     PassengerProfileUpdate,
@@ -62,7 +65,20 @@ def update_profile(
     if payload.price_sensitivity is not None:
         profile.price_sensitivity = payload.price_sensitivity
 
+    # Recompute the 32-dim preference embedding so the recommender reflects the
+    # passenger's updated choices. Uses the same builder as the seed generator.
+    passenger = db.scalar(select(Passenger).where(Passenger.id == current_user.id))
+    ffp_tier = getattr(passenger, "ffp_tier", None) if passenger else None
+    profile.preference_embedding = _passenger_embedding(
+        profile.cuisine_prefs or {},
+        profile.dietary_flags or {},
+        profile.allergy_flags or {},
+        profile.price_sensitivity or "mid",
+        profile.portion_pref or "medium",
+        ffp_tier or "Bronze",
+        np.random.default_rng(0),
+    )
+
     db.commit()
     db.refresh(profile)
-
     return success_response(PassengerProfileResponse.model_validate(profile))

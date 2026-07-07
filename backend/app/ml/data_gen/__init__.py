@@ -28,6 +28,7 @@ from app.models.crew import CrewMember, CrewRole
 from app.models.delivery import DeliveryTask, DeliveryStatus
 from app.models.feedback import Feedback
 from app.models.flight import Flight, FlightSeat, FlightStatus
+from app.models.booking import Booking
 from app.models.meal import FlightInventory, MealCategory, MealItem
 from app.models.ml import ModelRegistry
 from app.models.order import OrderItem, OrderStatus, PassengerOrder
@@ -151,7 +152,7 @@ def _rating(rng: np.random.Generator) -> int:
 
 # ── Truncate all tables (--reset) ─────────────────────────────────────────────
 _TABLES = (
-    "feedback,delivery_tasks,order_items,passenger_orders,"
+    "bookings,feedback,delivery_tasks,order_items,passenger_orders,"
     "flight_inventory,flight_seats,flights,passenger_profiles,"
     "passengers,crew_members,meal_items,meal_categories,"
     "model_registry,airlines"
@@ -879,6 +880,108 @@ def _gen_orders_tasks_feedback(
     }
 
 
+def _gen_bookings(
+    db: Session,
+    rng: "np.random.Generator",
+    flights: list["Flight"],
+    passengers: list["Passenger"],
+    seat_counts: dict[tuple, int],
+) -> dict[str, Any]:
+    """Assign passengers to REAL seats and persist Booking rows.
+
+    Source of truth for 'who is on which flight in which seat'. Deterministic
+    under the shared rng. Pins one demo booking: PNR AIRMEAL1 -> SV209 -> Y12C.
+    """
+    from app.models.flight import FlightSeat as _FlightSeat
+
+    DEMO_PNR = "SV2K9C"
+    DEMO_LAST_NAME = "Tang"
+    SV209_ID = uuid.UUID("b159aea5-2cf0-4e54-a8b2-183078d41915")
+    DEMO_SEAT = "Y12C"
+
+    # Load all real seats grouped by flight
+    all_seats = db.scalars(select(_FlightSeat)).all()
+    seats_by_flight: dict[uuid.UUID, list] = {}
+    for s in all_seats:
+        seats_by_flight.setdefault(s.flight_id, []).append(s)
+    # Stable seat order per flight for reproducibility
+    for fid in seats_by_flight:
+        seats_by_flight[fid].sort(key=lambda s: s.seat_number)
+
+    bookings: list[Booking] = []
+    # Real-airline record locators: 6 chars, uppercase letters+digits, no ambiguous chars.
+    _PNR_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # excludes I,O,0,1 to avoid confusion
+    _used_pnrs: set[str] = {DEMO_PNR}
+
+    def _make_pnr() -> str:
+        while True:
+            code = "".join(_PNR_ALPHABET[int(k)] for k in rng.integers(0, len(_PNR_ALPHABET), size=6))
+            if code not in _used_pnrs:
+                _used_pnrs.add(code)
+                return code
+
+    used_passenger_idxs: set[int] = set()
+    pool_size = len(passengers)
+
+    # Reserve one passenger as the pinned demo passenger (first passenger).
+    demo_passenger = passengers[0]
+    demo_passenger.last_name = DEMO_LAST_NAME
+    demo_passenger.pnr = DEMO_PNR
+    used_passenger_idxs.add(0)
+
+    for flight in flights:
+        seats = seats_by_flight.get(flight.id, [])
+        if not seats:
+            continue
+        n_take = int(len(seats) * (flight.load_factor or 0.8))
+        n_take = max(0, min(n_take, len(seats)))
+        if n_take == 0:
+            continue
+
+        # Choose seats deterministically (first n_take in sorted order)
+        chosen_seats = seats[:n_take]
+
+        # Choose passengers for this flight (deterministic sample, skip already-used)
+        available_idxs = [i for i in range(pool_size) if i not in used_passenger_idxs]
+        if len(available_idxs) < len(chosen_seats):
+            # Not enough unique passengers left; allow reuse across flights beyond this point
+            available_idxs = list(range(pool_size))
+        pick = rng.choice(len(available_idxs), size=len(chosen_seats), replace=False)
+        picked_idxs = [available_idxs[int(k)] for k in pick]
+
+        for seat, p_idx in zip(chosen_seats, picked_idxs):
+            passenger = passengers[p_idx]
+            used_passenger_idxs.add(p_idx)
+            bookings.append(Booking(
+                id=_uid(rng),
+                pnr=_make_pnr(),
+                passenger_id=passenger.id,
+                flight_id=flight.id,
+                seat_number=seat.seat_number,
+                cabin_class=seat.cabin_class,
+            ))
+
+    # Pin the demo booking: AIRMEAL1 -> SV209 -> Y12C (overrides any seat clash).
+    # Remove any booking that grabbed SV209/Y12C or the demo passenger, then add the pin.
+    bookings = [
+        b for b in bookings
+        if not (b.flight_id == SV209_ID and b.seat_number == DEMO_SEAT)
+        and b.passenger_id != demo_passenger.id
+    ]
+    bookings.append(Booking(
+        id=_uid(rng),
+        pnr=DEMO_PNR,
+        passenger_id=demo_passenger.id,
+        flight_id=SV209_ID,
+        seat_number=DEMO_SEAT,
+        cabin_class="economy",
+    ))
+
+    db.add_all(bookings)
+    db.flush()
+    return {"bookings": len(bookings)}
+
+
 def _gen_model_registry(db: Session) -> None:
     """Seed four model entries with NULL metrics — never pre-populate numbers."""
     models = [
@@ -968,7 +1071,8 @@ def generate(
     order_stats = _gen_orders_tasks_feedback(
         db, rng, flights, passengers, allergy_flags_by_id, meals, crew, inv_map, seat_counts
     )
-
+    print("  Bookings…")
+    booking_stats = _gen_bookings(db, rng, flights, passengers, seat_counts)
     print("  Model registry…")
     _gen_model_registry(db)
 
@@ -984,6 +1088,7 @@ def generate(
         "flight_seats":   sum(seat_counts.values()),
         "flight_inventory": len(inv_map),
         **order_stats,
+        **booking_stats,
         "model_registry": 4,
     }
     return stats

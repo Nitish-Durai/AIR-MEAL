@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import Link from "next/link";
+import { SearchBar } from "@/components/ui/search-bar";
 import {
   Armchair,
   ShieldCheck,
@@ -147,6 +148,8 @@ function MenuBrowser() {
 
   // Filters
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
+
+  const [selectedRecCategory, setSelectedRecCategory] = useState<string>("All");
   const [selectedDiet, setSelectedDiet] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -165,6 +168,14 @@ function MenuBrowser() {
   const [orderError, setOrderError] = useState<string | null>(null);
   const [createdOrder, setCreatedOrder] = useState<any | null>(null);
   const [expandedRecId, setExpandedRecId] = useState<string | null>(null);
+
+  const [lastOrderId, setLastOrderId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setLastOrderId(localStorage.getItem("airmeal_last_order_id"));
+    }
+  }, []);
 
   const togglePriority = (f: string) =>
     setPriorityFactors(prev => prev.includes(f) ? prev.filter(x => x !== f) : [...prev, f]);
@@ -336,6 +347,10 @@ function MenuBrowser() {
 
       const orderData = response.data;
       setCreatedOrder(orderData);
+      if (orderData?.id && typeof window !== "undefined") {
+        localStorage.setItem("airmeal_last_order_id", orderData.id);
+        setLastOrderId(orderData.id);
+      }
       setCart({}); // clear cart
       setPriorityFactors([]); // reset priority factors
       setIsReviewModalOpen(false); // close review modal
@@ -540,7 +555,18 @@ function MenuBrowser() {
 
       {/* Main Title & Allergen Alert */}
       <div className="mb-6">
-        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight mb-2">Inflight Dining Menu</h1>
+        <div className="flex items-start justify-between gap-3 mb-2">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Inflight Dining Menu</h1>
+          {lastOrderId && (
+            <button
+              onClick={() => router.push(`/passenger/tracking?order_id=${lastOrderId}&flight_id=${flightId}`)}
+              className="flex-shrink-0 flex items-center gap-1.5 h-9 px-4 bg-[#FFB74D] hover:bg-[#FFA726] text-[#7C4A03] font-bold rounded-lg transition-colors text-xs cursor-pointer"
+            >
+              <ShoppingBag className="w-4 h-4" />
+              <span>Track Order</span>
+            </button>
+          )}
+        </div>
         <p className="text-sm text-[#8BAABF]">Browse and filter meals available on your flight.</p>
 
         {allergenHiddenCount > 0 && (
@@ -592,12 +618,42 @@ function MenuBrowser() {
             <Sparkles className="w-5 h-5 text-[#FF6B35]" />
             <span>Recommended for You</span>
           </h2>
-          <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-none whitespace-nowrap -mx-4 px-4 sm:mx-0 sm:px-0">
-            {recommendations.map(rec => {
-              const menuItem = menuItems.find(m => m.id === rec.meal_id);
-              const recCategory = menuItem ? mealCategory(menuItem) : null;
-              const isOutOfStock = menuItem ? (menuItem.current_stock === 0 || menuItem.current_stock === null) : false;
-              return (
+          {(() => {
+            // Category chips derived from the recommendations present.
+            const recCats = Array.from(new Set(recommendations.map(r => {
+              const mi = menuItems.find(m => m.id === r.meal_id);
+              return (mi ? mealCategory(mi) : null) || "Other";
+            })));
+            const recChips = ["All", ...recCats];
+            const visibleRecs = recommendations.filter(r => {
+              if (selectedRecCategory === "All") return true;
+              const mi = menuItems.find(m => m.id === r.meal_id);
+              return ((mi ? mealCategory(mi) : null) || "Other") === selectedRecCategory;
+            });
+            return (
+              <>
+                <div className="flex gap-2 overflow-x-auto pb-3 scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
+                  {recChips.map(cat => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setSelectedRecCategory(cat)}
+                      className={`flex-shrink-0 px-3 h-8 rounded-full text-xs font-semibold transition-colors cursor-pointer ${
+                        selectedRecCategory === cat
+                          ? "bg-[#90CAF9] text-[#0A2F5E]"
+                          : "bg-[var(--color-surface)] text-[var(--color-text-secondary)] border border-[var(--color-border)] hover:border-[#64B5F6]"
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-none whitespace-nowrap -mx-4 px-4 sm:mx-0 sm:px-0">
+                  {visibleRecs.map(rec => {
+                    const menuItem = menuItems.find(m => m.id === rec.meal_id);
+                    const recCategory = menuItem ? mealCategory(menuItem) : null;
+                    const isOutOfStock = menuItem ? (menuItem.current_stock === 0 || menuItem.current_stock === null) : false;
+                    return (
                 <div
                   key={rec.meal_id}
                   className="flex w-[280px] flex-shrink-0 flex-col justify-between overflow-hidden whitespace-normal rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-card)] transition-all duration-300 hover:-translate-y-1 hover:border-[var(--color-primary)] hover:shadow-[0_8px_30px_rgba(255,107,53,0.15)] sm:w-[320px]"
@@ -667,24 +723,22 @@ function MenuBrowser() {
                   </div>
                 </div>
               );
-            })}
-          </div>
+                  })}
+                </div>
+              </>
+            );
+          })()}
         </div>
       )}
 
       {/* Search and Filters panel */}
       <div className="space-y-4 mb-6">
         {/* Search bar */}
-        <div className="relative">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8BAABF]" />
-          <input
-            type="text"
-            placeholder="Search dining items..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-11 pl-10 pr-4 bg-[#0A1929] border border-[rgba(30,136,229,0.15)] rounded-lg text-sm text-[#E8F1FA] placeholder-[#8BAABF] focus:outline-none focus:border-[#1E88E5]"
-          />
-        </div>
+        <SearchBar
+          value={searchQuery}
+          onValueChange={setSearchQuery}
+          placeholder="Search meals, drinks, desserts…"
+        />
 
         {/* Categories row - Horizontally Scrollable on Mobile */}
         <div className="relative">
@@ -1084,7 +1138,7 @@ function MenuBrowser() {
                           el.style.transform = "translateY(-2px)";
                           el.style.border = "1px solid rgba(30,136,229,0.6)";
                           el.style.boxShadow = "0 6px 20px rgba(30,136,229,0.18)";
-                          el.style.color = "#E8F1FA";
+                          el.style.color = "#0A2F5E";
                         }}
                         onMouseLeave={(e) => {
                           const el = e.currentTarget as HTMLButtonElement;
@@ -1178,7 +1232,7 @@ function MenuBrowser() {
                 onClick={() => {
                   router.push(`/passenger/tracking?order_id=${createdOrder.id}&flight_id=${flightId}`);
                 }}
-                className="w-full h-11 bg-[#FF6B35] hover:bg-[#FF8A5E] text-white font-bold rounded-lg transition-colors text-sm cursor-pointer flex items-center justify-center gap-1.5"
+                className="w-full h-11 bg-[#FFB74D] hover:bg-[#FFA726] text-[#7C4A03] font-bold rounded-lg transition-colors text-sm cursor-pointer flex items-center justify-center gap-1.5"
                 style={{ minHeight: "44px" }}
               >
                 <ShoppingBag className="w-4 h-4" />

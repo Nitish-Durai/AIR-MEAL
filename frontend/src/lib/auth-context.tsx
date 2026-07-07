@@ -47,7 +47,7 @@ export interface AuthContextValue extends AuthState {
 }
 
 export interface RegisterPayload {
-  pnr: string;
+  pnr?: string;
   first_name: string;
   last_name: string;
   email: string;

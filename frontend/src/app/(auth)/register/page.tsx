@@ -12,7 +12,6 @@ export default function RegisterPage() {
   const { register } = useAuth();
   const router = useRouter();
 
-  const [pnr, setPnr] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -91,7 +90,6 @@ export default function RegisterPage() {
     setLoading(true);
 
     const payload: RegisterPayload = {
-      pnr: pnr.trim().toUpperCase(),
       first_name: firstName.trim(),
       last_name: lastName.trim(),
       email: email.trim().toLowerCase(),
@@ -151,19 +149,6 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="reg-pnr" className="text-[12.5px] font-medium text-[var(--color-text-secondary)]">
-              Booking reference (PNR)
-            </label>
-            <Input
-              id="reg-pnr"
-              required
-              value={pnr}
-              onChange={(e) => setPnr(e.target.value.toUpperCase())}
-              placeholder="ABC123"
-              maxLength={20}
-            />
-          </div>
 
           <div className="flex flex-col gap-1.5">
             <label htmlFor="reg-email" className="text-[12.5px] font-medium text-[var(--color-text-secondary)]">
