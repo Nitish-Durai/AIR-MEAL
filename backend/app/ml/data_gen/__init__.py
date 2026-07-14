@@ -42,6 +42,7 @@ from .catalog import (
     NATIONALITY_CONFIG, NATIONALITY_DIETARY, ALLERGY_PREVALENCE,
     PORTION_PREFS, PORTION_WEIGHTS, PRICE_LEVELS, PRICE_WEIGHTS,
 )
+from app.ml.data_gen.meal_images import MEAL_IMAGES
 
 EMBEDDING_DIM = 32
 
@@ -209,7 +210,7 @@ def _gen_meals(
             allergen_flags=entry["allergens"],
             dietary_flags=entry["dietary"],
             calories=entry["calories"],
-            image_url=f"https://cdn.airmeal.demo/meals/{entry['code'].lower()}.jpg",
+            image_url=MEAL_IMAGES.get(entry["code"]),
             meal_embedding=_meal_embedding(entry, cat_idx, rng),
             is_alcohol=entry.get("alcohol", False),
         ))

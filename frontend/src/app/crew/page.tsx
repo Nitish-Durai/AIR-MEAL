@@ -162,12 +162,25 @@ function CrewDashboardContent() {
     }
   };
 
+  const [priorityFilter, setPriorityFilter] = useState<"all" | "critical" | "high" | "standard">("all");
+  const [sortLatest, setSortLatest] = useState(false);
+
   const hasCriticalTask = tasks.some(t => t.priority_score >= 8);
   const tasksFiltered = tasks
     .filter(t =>
       t.seat_number.toLowerCase().includes(seatSearch.trim().toLowerCase())
     )
+    .filter(t => {
+      if (priorityFilter === "all") return true;
+      if (priorityFilter === "critical") return t.priority_score >= 8;
+      if (priorityFilter === "high") return t.priority_score >= 5 && t.priority_score < 8;
+      return t.priority_score < 5; // standard
+    })
     .sort((a, b) => {
+      if (sortLatest) {
+        // Newest orders first.
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
       // Priority first (Critical > High > Standard), then delivery sequence within a tier.
       if (b.priority_score !== a.priority_score) return b.priority_score - a.priority_score;
       return (a.route_position ?? 0) - (b.route_position ?? 0);
@@ -341,7 +354,40 @@ function CrewDashboardContent() {
         ) : (
           /* Tablet/Desktop task board grids */
           <>
-            <div className="flex items-center gap-2 mb-4 mt-2">
+            <div className="flex flex-wrap items-center gap-2 mb-3 mt-2">
+              {([
+                { key: "all", label: "All", cls: "bg-[#BBDEFB] text-[#0A2F5E]" },
+                { key: "critical", label: "Critical", cls: "bg-[#EF9A9A] text-[#7F1D1D]" },
+                { key: "high", label: "High", cls: "bg-[#FFE082] text-[#5C4400]" },
+                { key: "standard", label: "Standard", cls: "bg-[#90CAF9] text-[#0A2F5E]" },
+              ] as const).map(opt => (
+                <button
+                  key={opt.key}
+                  type="button"
+                  onClick={() => setPriorityFilter(opt.key)}
+                  className={`h-8 px-3 rounded-full text-xs font-bold transition-all cursor-pointer border ${
+                    priorityFilter === opt.key
+                      ? `${opt.cls} border-transparent`
+                      : "bg-transparent text-[var(--color-text-muted)] border-[var(--color-border)] hover:text-[var(--color-text)]"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+              <div className="w-px h-6 bg-[var(--color-border)] mx-1" />
+              <button
+                type="button"
+                onClick={() => setSortLatest(s => !s)}
+                className={`h-8 px-3 rounded-full text-xs font-bold transition-all cursor-pointer border ${
+                  sortLatest
+                    ? "bg-[#FFCC80] text-[#7C4A03] border-transparent"
+                    : "bg-transparent text-[var(--color-text-muted)] border-[var(--color-border)] hover:text-[var(--color-text)]"
+                }`}
+              >
+                {sortLatest ? "Latest first ✓" : "Latest first"}
+              </button>
+            </div>
+            <div className="flex items-center gap-2 mb-4">
                 <SearchBar
                   value={seatSearch}
                   onValueChange={setSeatSearch}

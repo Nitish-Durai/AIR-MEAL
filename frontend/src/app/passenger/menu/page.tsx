@@ -659,6 +659,29 @@ function MenuBrowser() {
                   className="flex w-[280px] flex-shrink-0 flex-col justify-between overflow-hidden whitespace-normal rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-card)] transition-all duration-300 hover:-translate-y-1 hover:border-[var(--color-primary)] hover:shadow-[0_8px_30px_rgba(255,107,53,0.15)] sm:w-[320px]"
                 >
                   <div>
+                    {/* Recommended photo banner with icon fallback */}
+                    <div className="relative h-40 w-full overflow-hidden bg-[var(--color-surface)]">
+                      {menuItem?.image_url ? (
+                        <img
+                          src={menuItem.image_url}
+                          alt={rec.name}
+                          loading="lazy"
+                          className="h-full w-full object-cover"
+                          onError={(e) => {
+                            const img = e.currentTarget;
+                            img.style.display = "none";
+                            const fb = img.nextElementSibling as HTMLElement | null;
+                            if (fb) fb.style.display = "flex";
+                          }}
+                        />
+                      ) : null}
+                      <div
+                        className="absolute inset-0 flex items-center justify-center"
+                        style={{ display: menuItem?.image_url ? "none" : "flex" }}
+                      >
+                        <ShoppingBag className="h-10 w-10 text-[var(--color-primary)]/40" />
+                      </div>
+                    </div>
                     {/* Header strip with match score */}
                     <div className="flex items-center justify-between border-b border-[var(--color-border)] bg-[linear-gradient(135deg,rgba(255,107,53,0.10),rgba(30,136,229,0.08))] px-4 py-3">
                       <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-secondary)]">
@@ -809,8 +832,31 @@ function MenuBrowser() {
                 }`}
               >
                 <div>
-                  {/* Accent header strip (image-free design) */}
-                  <div className="relative flex items-center justify-between border-b border-[var(--color-border)] bg-[linear-gradient(135deg,rgba(30,136,229,0.12),rgba(10,47,94,0.12))] px-4 py-3">
+                  {/* Meal photo banner with icon fallback */}
+                  <div className="relative h-44 w-full overflow-hidden bg-[var(--color-surface)]">
+                    {meal.image_url ? (
+                      <img
+                        src={meal.image_url}
+                        alt={meal.name}
+                        loading="lazy"
+                        className="h-full w-full object-cover"
+                        onError={(e) => {
+                          const img = e.currentTarget;
+                          img.style.display = "none";
+                          const fb = img.nextElementSibling as HTMLElement | null;
+                          if (fb) fb.style.display = "flex";
+                        }}
+                      />
+                    ) : null}
+                    <div
+                      className="absolute inset-0 flex items-center justify-center"
+                      style={{ display: meal.image_url ? "none" : "flex" }}
+                    >
+                      <ShoppingBag className="h-10 w-10 text-[var(--color-primary)]/40" />
+                    </div>
+                  </div>
+                  {/* Accent header strip */}
+                  <div className="relative flex items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-card)] px-4 py-3">
                     <div className="flex items-center gap-2">
                       <div className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-sm)] bg-[var(--color-primary)]/15 text-[var(--color-primary-hover)]">
                         <ShoppingBag className="h-4 w-4" />
@@ -908,6 +954,29 @@ function MenuBrowser() {
                   key={meal.id}
                   className="flex flex-col overflow-hidden rounded-[var(--radius)] border border-[var(--color-error)]/30 bg-[var(--color-error)]/5 opacity-90"
                 >
+                  {/* Photo banner (dimmed — item is blocked) with icon fallback */}
+                  <div className="relative h-40 w-full overflow-hidden bg-[var(--color-surface)]">
+                    {meal.image_url ? (
+                      <img
+                        src={meal.image_url}
+                        alt={meal.name}
+                        loading="lazy"
+                        className="h-full w-full object-cover grayscale-[35%] brightness-90"
+                        onError={(e) => {
+                          const img = e.currentTarget;
+                          img.style.display = "none";
+                          const fb = img.nextElementSibling as HTMLElement | null;
+                          if (fb) fb.style.display = "flex";
+                        }}
+                      />
+                    ) : null}
+                    <div
+                      className="absolute inset-0 flex items-center justify-center"
+                      style={{ display: meal.image_url ? "none" : "flex" }}
+                    >
+                      <AlertTriangle className="h-10 w-10 text-[var(--color-error)]/40" />
+                    </div>
+                  </div>
                   {/* Red accent header strip */}
                   <div className="flex items-center justify-between border-b border-[var(--color-error)]/20 bg-[linear-gradient(135deg,rgba(198,40,40,0.14),rgba(198,40,40,0.06))] px-4 py-3">
                     <div className="flex items-center gap-2">

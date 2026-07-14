@@ -1,0 +1,75 @@
+"""Real meal photo URLs (Unsplash), keyed by meal code.
+
+Hand-sourced and verified per dish. Meals not listed here (plain/branded
+drinks like Coca-Cola) fall back to a category icon in the UI.
+"""
+
+MEAL_IMAGES: dict[str, str] = {
+    # Starters
+    "ST001": "https://images.unsplash.com/photo-1659480150417-25f9f0d5ca2e?w=600&auto=format&fit=crop&q=60",
+    "ST002": "https://images.unsplash.com/photo-1652088079703-38f4a8d6b981?w=600&auto=format&fit=crop&q=60",
+    "ST003": "https://images.unsplash.com/photo-1650939976088-a7558d49a026?w=600&auto=format&fit=crop&q=60",
+    "ST004": "https://images.unsplash.com/photo-1727280376746-b89107a5b0df?w=600&auto=format&fit=crop&q=60",
+    "ST005": "https://plus.unsplash.com/premium_photo-1695756121533-3f60bee7ba7b?w=600&auto=format&fit=crop&q=60",
+    "ST006": "https://images.unsplash.com/photo-1607532941433-304659e8198a?w=600&auto=format&fit=crop&q=60",
+    "ST007": "https://images.unsplash.com/photo-1625944230945-1b7dd3b949ab?w=600&auto=format&fit=crop&q=60",
+    "ST008": "https://images.unsplash.com/photo-1729655111675-3038ddb357d8?w=600&auto=format&fit=crop&q=60",
+    # Mains
+    "MC001": "https://images.unsplash.com/photo-1728910107534-e04e261768ae?w=600&auto=format&fit=crop&q=60",
+    "MC002": "https://images.unsplash.com/photo-1589302168068-964664d93dc0?w=600&auto=format&fit=crop&q=60",
+    "MC003": "https://plus.unsplash.com/premium_photo-1699293238823-7f56fe53ae3e?w=600&auto=format&fit=crop&q=60",
+    "MC004": "https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=600&auto=format&fit=crop&q=60",
+    "MC005": "https://images.unsplash.com/photo-1760504526069-ff0f8bf6e4ca?w=600&auto=format&fit=crop&q=60",
+    "MC006": "https://plus.unsplash.com/premium_photo-1668143358351-b20146dbcc02?w=600&auto=format&fit=crop&q=60",
+    "MC007": "https://images.unsplash.com/photo-1650143987591-8e2d4231a8d6?w=600&auto=format&fit=crop&q=60",
+    "MC008": "https://images.unsplash.com/photo-1664214649076-7b17006db5b5?w=600&auto=format&fit=crop&q=60",
+    "MC009": "https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=600&auto=format&fit=crop&q=60",
+    "MC010": "https://plus.unsplash.com/premium_photo-1670263778678-54cde45cd1f5?w=600&auto=format&fit=crop&q=60",
+    "MC011": "https://plus.unsplash.com/premium_photo-1663853051660-91bd9b822799?w=600&auto=format&fit=crop&q=60",
+    "MC012": "https://images.unsplash.com/photo-1605704922285-e82455dba38b?w=600&auto=format&fit=crop&q=60",
+    "MC013": "https://images.unsplash.com/photo-1607857530521-53448b220fe8?w=600&auto=format&fit=crop&q=60",
+    "MC014": "https://images.unsplash.com/photo-1637806930600-37fa8892069d?w=600&auto=format&fit=crop&q=60",
+    "MC015": "https://plus.unsplash.com/premium_photo-1694699354443-289006ee7362?w=600&auto=format&fit=crop&q=60",
+    "MC016": "https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?w=600&auto=format&fit=crop&q=60",
+    # Desserts
+    "DS001": "https://images.unsplash.com/photo-1666190092159-3171cf0fbb12?w=600&auto=format&fit=crop&q=60",
+    "DS002": "https://images.unsplash.com/photo-1680588194311-6eb00e9c1e25?w=600&auto=format&fit=crop&q=60",
+    "DS003": "https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=600&auto=format&fit=crop&q=60",
+    "DS004": "https://images.unsplash.com/photo-1617806501553-d3a6a3a7b227?w=600&auto=format&fit=crop&q=60",
+    "DS005": "https://images.unsplash.com/photo-1554630981-a73ffb5ed6f8?w=600&auto=format&fit=crop&q=60",
+    "DS006": "https://images.unsplash.com/photo-1519996529931-28324d5a630e?w=600&auto=format&fit=crop&q=60",
+    "DS007": "https://images.unsplash.com/photo-1511911063855-2bf39afa5b2e?w=600&auto=format&fit=crop&q=60",
+    "DS008": "https://images.unsplash.com/photo-1542116021-0ff087fb0a41?w=600&auto=format&fit=crop&q=60",
+    "DS009": "https://images.unsplash.com/photo-1635327173758-85badf17f995?w=600&auto=format&fit=crop&q=60",
+    "DS010": "https://images.unsplash.com/photo-1676300184943-09b2a08319a3?w=600&auto=format&fit=crop&q=60",
+    "DS011": "https://images.unsplash.com/photo-1641677317132-045e9e367d5d?w=600&auto=format&fit=crop&q=60",
+    "DS012": "https://images.unsplash.com/photo-1562007908-17c67e878c88?w=600&auto=format&fit=crop&q=60",
+    # Beverages
+    "BV001": "https://images.unsplash.com/photo-1683533698664-12ee473e8c9d?w=600&auto=format&fit=crop&q=60",
+    "BV002": "https://images.unsplash.com/photo-1627435601361-ec25f5b1d0e5?w=600&auto=format&fit=crop&q=60",
+    "BV003": "https://images.unsplash.com/photo-1613478223719-2ab802602423?w=600&auto=format&fit=crop&q=60",
+    "BV004": "https://images.unsplash.com/photo-1638688569176-5b6db19f9d2a?w=600&auto=format&fit=crop&q=60",
+    "BV005": "https://images.unsplash.com/photo-1554866585-cd94860890b7?w=600&auto=format&fit=crop&q=60",
+    "BV006": "https://images.unsplash.com/photo-1543253687-c931c8e01820?w=600&auto=format&fit=crop&q=60",
+    "BV007": "https://images.unsplash.com/photo-1680404005217-a441afdefe83?w=600&auto=format&fit=crop&q=60",
+    "BV008": "https://plus.unsplash.com/premium_photo-1674327105280-b86494dfc690?w=600&auto=format&fit=crop&q=60",
+    "BV009": "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=600&auto=format&fit=crop&q=60",
+    "BV010": "https://images.unsplash.com/photo-1612375066516-11d6d394bd2a?w=600&auto=format&fit=crop&q=60",
+    # Snacks
+    "SN001": "https://images.unsplash.com/photo-1671981200629-014c03829abb?w=600&auto=format&fit=crop&q=60",
+    "SN002": "https://plus.unsplash.com/premium_photo-1671455916389-0964887400b9?w=600&auto=format&fit=crop&q=60",
+    "SN003": "https://images.unsplash.com/photo-1442604699113-7d805614c476?w=600&auto=format&fit=crop&q=60",
+    "SN004": "https://images.unsplash.com/photo-1641291361624-38b69b86b1cf?w=600&auto=format&fit=crop&q=60",
+    "SN005": "https://plus.unsplash.com/premium_photo-1726490292042-7587d23d52de?w=600&auto=format&fit=crop&q=60",
+    "SN006": "https://plus.unsplash.com/premium_photo-1678483062136-819f34027ebd?q=80&w=687&auto=format&fit=crop",
+    "SN007": "https://images.unsplash.com/photo-1505686994434-e3cc5abf1330?w=600&auto=format&fit=crop&q=60",
+    "SN008": "https://images.unsplash.com/photo-1542676303584-c8043a6c7618?w=600&auto=format&fit=crop&q=60",
+    "SN009": "https://images.unsplash.com/photo-1571230389215-b34a89739ef1?w=600&auto=format&fit=crop&q=60",
+    "SN010": "https://images.unsplash.com/photo-1688923130941-889a41f4439c?w=600&auto=format&fit=crop&q=60",
+    # Alcohol
+    "AL001": "https://plus.unsplash.com/premium_photo-1725075086205-627ae4c7bcd9?w=600&auto=format&fit=crop&q=60",
+    "AL002": "https://images.unsplash.com/photo-1597905722448-a1df7c00000a?w=600&auto=format&fit=crop&q=60",
+    "AL003": "https://images.unsplash.com/photo-1600788886242-5c96aabe3757?w=600&auto=format&fit=crop&q=60",
+    "AL004": "https://plus.unsplash.com/premium_photo-1695053979182-5a5765258c34?w=600&auto=format&fit=crop&q=60",
+    "AL005": "https://plus.unsplash.com/premium_photo-1661344277834-bde1f854ec10?w=600&auto=format&fit=crop&q=60",
+}
