@@ -311,6 +311,10 @@ function MenuBrowser() {
     return cat !== null && SINGLE_SELECT_CATEGORIES.includes(cat);
   };
 
+  // True once any item from this course category is already in the cart.
+  const courseIsTaken = (categoryName: string): boolean =>
+    Object.keys(cart).some(id => categoryOf(id) === categoryName);
+
   // Returns the mealId already in the cart occupying this meal's course slot, if any.
   const conflictingMealId = (mealId: string): string | null => {
     const cat = categoryOf(mealId);
@@ -415,14 +419,30 @@ function MenuBrowser() {
       return (
         <button
           onClick={() => decrementCart(mealId)}
-          className="w-full flex items-center justify-center gap-2 h-11 px-4 bg-[#1E88E5] border border-[#1E88E5] text-white font-medium rounded-lg text-xs transition-colors hover:bg-[#1565C0] cursor-pointer"
+          className="w-full flex items-center justify-center gap-2 h-11 px-4 bg-[#81C784] border border-[#81C784] text-[#0A2F5E] font-semibold rounded-lg text-xs transition-colors hover:bg-[#66BB6A] cursor-pointer"
           style={{ minHeight: "44px" }}
           aria-label="Remove from order"
         >
           <Check className="w-4 h-4" />
-          Selected — tap to remove
+          Selected &mdash; tap to remove
         </button>
       );
+    }
+
+    // Another item already occupies this course slot: offer a direct swap.
+    if (single && qty === 0) {
+      const cat = categoryOf(mealId);
+      if (cat && courseIsTaken(cat)) {
+        return (
+          <button
+            onClick={() => addToCart(mealId)}
+            className="w-full flex items-center justify-center h-11 px-4 bg-transparent border border-[var(--color-border)] text-[var(--color-text-muted)] font-medium rounded-lg text-xs transition-colors hover:border-[#81C784] hover:text-[#81C784] cursor-pointer"
+            style={{ minHeight: "44px" }}
+          >
+            Choose this instead
+          </button>
+        );
+      }
     }
 
     if (qty > 0) {
@@ -849,6 +869,23 @@ function MenuBrowser() {
         </div>
       </div>
 
+      {/* One-per-course notice */}
+      {SINGLE_SELECT_CATEGORIES.includes(selectedCategory) && (
+        <div className="mb-5 flex items-center gap-3 rounded-[var(--radius)] border-l-4 border-l-[#81C784] border-y border-r border-y-[var(--color-border)] border-r-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3.5">
+          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[#81C784]/15">
+            <Check className="h-4 w-4 text-[#81C784]" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-sm font-bold leading-snug text-[var(--color-text-primary)]">
+              Select one item from this category
+            </span>
+            <span className="text-xs leading-snug text-[var(--color-text-muted)]">
+              Choosing another will replace your current selection.
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Meals Grid */}
       {filteredItems.length === 0 ? (
         <div className="text-center py-16 bg-[#0A1929] border border-[rgba(30,136,229,0.1)] rounded-lg p-8">
@@ -861,6 +898,10 @@ function MenuBrowser() {
           {filteredItems.map(meal => {
             const isOutOfStock = meal.current_stock === 0 || meal.current_stock === null;
             const isLowStock = meal.current_stock !== null && meal.current_stock > 0 && meal.current_stock <= 3;
+            const isCourseItem = SINGLE_SELECT_CATEGORIES.includes(mealCategory(meal));
+            const isSelectedCourse = isCourseItem && (cart[meal.id] || 0) > 0;
+            const isSupersededCourse =
+              isCourseItem && !isSelectedCourse && courseIsTaken(mealCategory(meal));
             
             // Format allergens display
             const mealAllergens = meal.allergen_flags
@@ -873,6 +914,10 @@ function MenuBrowser() {
                 className={`group flex flex-col justify-between overflow-hidden rounded-[var(--radius)] border transition-all duration-200 ${
                   isOutOfStock
                     ? "border-[var(--color-error)]/15 bg-[var(--color-card)]/40 opacity-70"
+                    : isSelectedCourse
+                    ? "border-[#81C784] bg-[var(--color-card)] shadow-[0_0_0_1px_#81C784,0_8px_30px_rgba(129,199,132,0.18)]"
+                    : isSupersededCourse
+                    ? "border-[var(--color-border)] bg-[var(--color-card)] opacity-50 saturate-50"
                     : "border-[var(--color-border)] bg-[var(--color-card)] hover:-translate-y-1 hover:border-white/20 hover:shadow-[0_8px_30px_rgba(30,136,229,0.15)]"
                 }`}
               >
@@ -915,7 +960,12 @@ function MenuBrowser() {
                         </span>
                       </div>
                     </div>
-                    <div className="select-none">
+                    <div className="flex select-none items-center gap-1.5">
+                      {isCourseItem && !isOutOfStock && (
+                        <span className="rounded-[var(--radius-pill)] border border-[#81C784]/40 bg-[#81C784]/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#81C784]">
+                          Choose one
+                        </span>
+                      )}
                       {isOutOfStock ? (
                         <span className="rounded-[var(--radius-pill)] bg-[var(--color-error)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-[var(--shadow-xs)]">
                           Sold Out
