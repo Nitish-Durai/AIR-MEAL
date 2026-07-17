@@ -299,6 +299,9 @@ function MenuBrowser() {
   // Single-select categories: one item per course, mirroring real tray service.
   const SINGLE_SELECT_CATEGORIES = ["Starters", "Main Course", "Desserts"];
 
+  // Multi-select categories: unconstrained quantity, no course slot.
+  const MULTI_SELECT_CATEGORIES = ["Beverages", "Snacks", "Alcohol"];
+
   const findMeal = (mealId: string) => menuItems.find(m => m.id === mealId);
 
   const categoryOf = (mealId: string): string | null => {
@@ -419,7 +422,7 @@ function MenuBrowser() {
       return (
         <button
           onClick={() => decrementCart(mealId)}
-          className="w-full flex items-center justify-center gap-2 h-11 px-4 bg-[#81C784] border border-[#81C784] text-[#0A2F5E] font-semibold rounded-lg text-xs transition-colors hover:bg-[#66BB6A] cursor-pointer"
+          className="w-full flex items-center justify-center gap-2 h-11 px-4 bg-[#A5D6A7] border border-[#A5D6A7] text-[#0A2F5E] font-semibold rounded-lg text-xs transition-colors hover:bg-[#81C784] cursor-pointer"
           style={{ minHeight: "44px" }}
           aria-label="Remove from order"
         >
@@ -703,11 +706,12 @@ function MenuBrowser() {
                       key={cat}
                       type="button"
                       onClick={() => setSelectedRecCategory(cat)}
-                      className={`flex-shrink-0 px-3 h-8 rounded-full text-xs font-semibold transition-colors cursor-pointer ${
+                      className={`flex-shrink-0 px-3 h-8 rounded-full text-xs font-semibold border transition-all select-none cursor-pointer ${
                         selectedRecCategory === cat
-                          ? "bg-[#90CAF9] text-[#0A2F5E]"
-                          : "bg-[var(--color-surface)] text-[var(--color-text-secondary)] border border-[var(--color-border)] hover:border-[#64B5F6]"
+                          ? "shadow-sm"
+                          : "bg-transparent border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
                       }`}
+                      style={categoryChipStyle(cat, selectedRecCategory === cat)}
                     >
                       {cat}
                     </button>
@@ -828,9 +832,12 @@ function MenuBrowser() {
           placeholder="Search meals, drinks, desserts…"
         />
 
-        {/* Categories row - Horizontally Scrollable on Mobile */}
-        <div className="relative">
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none whitespace-nowrap -mx-4 px-4 sm:mx-0 sm:px-0">
+        {/* Meal type row - Horizontally Scrollable on Mobile */}
+        <div className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3.5">
+          <span className="mb-2.5 block text-xs font-bold uppercase tracking-[0.09em] text-[var(--color-text-secondary)]">
+            Menu section
+          </span>
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none whitespace-nowrap">
             {categoriesList.map(cat => (
               <button
                 key={cat}
@@ -848,9 +855,12 @@ function MenuBrowser() {
           </div>
         </div>
 
-        {/* Dietary Pills row - Horizontally Scrollable on Mobile */}
-        <div className="relative">
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none whitespace-nowrap -mx-4 px-4 sm:mx-0 sm:px-0">
+        {/* Dietary type row - Horizontally Scrollable on Mobile */}
+        <div className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3.5">
+          <span className="mb-2.5 block text-xs font-bold uppercase tracking-[0.09em] text-[var(--color-text-secondary)]">
+            Dietary preference
+          </span>
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none whitespace-nowrap">
             {dietFilters.map(diet => (
               <button
                 key={diet.key}
@@ -869,17 +879,34 @@ function MenuBrowser() {
         </div>
       </div>
 
-      {/* One-per-course notice */}
-      {SINGLE_SELECT_CATEGORIES.includes(selectedCategory) && (
-        <div className="mb-5 flex items-center gap-3 rounded-[var(--radius)] border-l-4 border-l-[#81C784] border-y border-r border-y-[var(--color-border)] border-r-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3.5">
-          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[#81C784]/15">
-            <Check className="h-4 w-4 text-[#81C784]" />
+      {/* Multi-select notice */}
+      {MULTI_SELECT_CATEGORIES.includes(selectedCategory) && (
+        <div className="mt-6 mb-6 flex items-center gap-3.5 rounded-r-[var(--radius)] border-l-[3px] border-l-[#FFB74D] border-y border-r border-y-[var(--color-border)] border-r-[var(--color-border)] bg-[var(--color-surface)] px-5 py-4">
+          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-[#FFB74D]/15">
+            <Plus className="h-5 w-5 text-[#FFB74D]" />
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-bold leading-snug text-[var(--color-text-primary)]">
+            <span className="text-base font-bold leading-snug text-[var(--color-text-primary)]">
+              Select as many as you like from this category
+            </span>
+            <span className="text-[13px] leading-snug text-[var(--color-text-muted)]">
+              Adjust quantities with the plus and minus controls.
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* One-per-course notice */}
+      {SINGLE_SELECT_CATEGORIES.includes(selectedCategory) && (
+        <div className="mt-6 mb-6 flex items-center gap-3.5 rounded-r-[var(--radius)] border-l-[3px] border-l-[#81C784] border-y border-r border-y-[var(--color-border)] border-r-[var(--color-border)] bg-[var(--color-surface)] px-5 py-4">
+          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-[#81C784]/15">
+            <Check className="h-5 w-5 text-[#81C784]" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-base font-bold leading-snug text-[var(--color-text-primary)]">
               Select one item from this category
             </span>
-            <span className="text-xs leading-snug text-[var(--color-text-muted)]">
+            <span className="text-[13px] leading-snug text-[var(--color-text-muted)]">
               Choosing another will replace your current selection.
             </span>
           </div>
@@ -899,6 +926,7 @@ function MenuBrowser() {
             const isOutOfStock = meal.current_stock === 0 || meal.current_stock === null;
             const isLowStock = meal.current_stock !== null && meal.current_stock > 0 && meal.current_stock <= 3;
             const isCourseItem = SINGLE_SELECT_CATEGORIES.includes(mealCategory(meal));
+            const isMultiItem = MULTI_SELECT_CATEGORIES.includes(mealCategory(meal));
             const isSelectedCourse = isCourseItem && (cart[meal.id] || 0) > 0;
             const isSupersededCourse =
               isCourseItem && !isSelectedCourse && courseIsTaken(mealCategory(meal));
@@ -964,6 +992,11 @@ function MenuBrowser() {
                       {isCourseItem && !isOutOfStock && (
                         <span className="rounded-[var(--radius-pill)] border border-[#81C784]/40 bg-[#81C784]/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#81C784]">
                           Choose one
+                        </span>
+                      )}
+                      {isMultiItem && !isOutOfStock && (
+                        <span className="rounded-[var(--radius-pill)] border border-[#FFB74D]/40 bg-[#FFB74D]/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#FFB74D]">
+                          Multi-select
                         </span>
                       )}
                       {isOutOfStock ? (

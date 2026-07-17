@@ -52,6 +52,13 @@ def _to_order_dto(order: PassengerOrder) -> dict:
                 "qty": item.qty,
                 "customisations": item.customisations,
                 "meal_name": item.meal.name if item.meal else None,
+                "meal_code": item.meal.meal_code if item.meal else None,
+                "category_name": (
+                    item.meal.category.name
+                    if item.meal and item.meal.category
+                    else None
+                ),
+                "is_alcohol": item.meal.is_alcohol if item.meal else False,
             }
             for item in order.items
         ],
@@ -255,7 +262,11 @@ def get_order(
     """Retrieve details of a passenger order by ID."""
     order = db.scalar(
         select(PassengerOrder)
-        .options(joinedload(PassengerOrder.items).joinedload(OrderItem.meal))
+        .options(
+            joinedload(PassengerOrder.items)
+            .joinedload(OrderItem.meal)
+            .joinedload(MealItem.category)
+        )
         .where(PassengerOrder.id == id)
     )
     if not order:

@@ -163,6 +163,9 @@ class OrderItemResponse(BaseModel):
     qty: int
     customisations: Optional[dict] = None
     meal_name: Optional[str] = None
+    meal_code: Optional[str] = None
+    category_name: Optional[str] = None
+    is_alcohol: bool = False
 
     class Config:
         from_attributes = True

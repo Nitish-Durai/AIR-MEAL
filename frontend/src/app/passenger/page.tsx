@@ -153,7 +153,7 @@ export default function PassengerPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-between py-12 px-4 font-sans text-[var(--color-text)] relative">
+    <div className="relative flex min-h-screen flex-col items-center justify-center px-4 py-12 font-sans text-[var(--color-text)]">
 
       {/* Main container */}
       <div className="w-full max-w-md mx-auto z-10">

@@ -15,6 +15,16 @@ import {
   Loader2,
   MessageSquare,
 } from "lucide-react";
+import dynamic from "next/dynamic";
+
+const MealTray = dynamic(() => import("@/components/MealTray"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-[320px] items-center justify-center rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-surface)]">
+      <Loader2 className="h-6 w-6 animate-spin text-[var(--color-text-muted)]" />
+    </div>
+  ),
+});
 
 interface OrderTrackingData {
   order_id: string;
@@ -22,6 +32,14 @@ interface OrderTrackingData {
   updated_at: string;
   eta_minutes: number;
   assigned_crew_name: string | null;
+}
+
+interface OrderItemData {
+  meal_name: string | null;
+  meal_code: string | null;
+  category_name: string | null;
+  is_alcohol: boolean;
+  qty: number;
 }
 
 const STATUS_STAGES = ["received", "confirmed", "preparing", "en_route", "delivered"];
@@ -155,6 +173,20 @@ function TrackingContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tracking, setTracking] = useState<OrderTrackingData | null>(null);
+  const [trayItems, setTrayItems] = useState<OrderItemData[]>([]);
+
+  const fetchTrayItems = async () => {
+    if (!orderId) return;
+    try {
+      const response = await api.get<{ data: { items: OrderItemData[] } }>(
+        `/api/v1/orders/${orderId}`,
+        accessToken || undefined
+      );
+      setTrayItems(response.data?.items ?? []);
+    } catch {
+      setTrayItems([]);
+    }
+  };
 
   const fetchTracking = async () => {
     if (!orderId) return;
@@ -178,6 +210,7 @@ function TrackingContent() {
 
   useEffect(() => {
     if (orderId) {
+      fetchTrayItems();
       fetchTracking();
     }
   }, [orderId, accessToken]);
@@ -310,6 +343,9 @@ function TrackingContent() {
               </div>
             </div>
 
+            {/* Meal tray preview */}
+            {trayItems.length > 0 && <MealTray items={trayItems} />}
+
             {/* Delivery Progress Timeline card */}
             <div
               className="rounded-xl p-6 border transition-all duration-300 cursor-default"
@@ -343,7 +379,7 @@ function TrackingContent() {
                   </div>
                 </div>
               ) : (
-                <div className="relative pl-6 border-l-2 border-[rgba(30,136,229,0.2)] space-y-7">
+                <div className="relative pl-6 space-y-7">
                   {STATUS_STAGES.map((stage, idx) => {
                     const isActive = idx <= currentStageIndex;
                     const isCurrent = idx === currentStageIndex;
@@ -351,31 +387,69 @@ function TrackingContent() {
 
                     return (
                       <div key={stage} className="relative">
+                        {/* Connector segment — omitted after the final stage */}
+                        {idx < STATUS_STAGES.length - 1 && (
+                          <div
+                            className="absolute w-0.5"
+                            style={{
+                              left: "-23px",
+                              top: "22px",
+                              bottom: "-28px",
+                              background: `linear-gradient(to bottom, ${
+                                ["#1E88E5", "#3D9AC4", "#5CAC9E", "#7ABE79"][idx]
+                              }, ${
+                                ["#3D9AC4", "#5CAC9E", "#7ABE79", "#81C784"][idx]
+                              })`,
+                            }}
+                          />
+                        )}
                         {/* Circle indicator */}
-                        <div
-                          className={`absolute top-1 flex items-center justify-center rounded-full border-2 transition-all duration-300 ${
-                            isCurrent
-                              ? "bg-[#1E88E5] border-[#1E88E5] shadow-[0_0_12px_rgba(30,136,229,0.7)]"
-                              : isActive
-                              ? "bg-[#0A2F5E] border-[#1E88E5]"
-                              : "bg-[var(--color-surface)] border-[rgba(30,136,229,0.2)]"
-                          }`}
-                          style={{ left: "-31px", width: "18px", height: "18px" }}
-                        >
-                          {isActive && !isCurrent && (
-                            <div className="w-2 h-2 rounded-full bg-white" />
-                          )}
-                        </div>
+                        {(() => {
+                          const stageColor = [
+                            "#1E88E5",
+                            "#3D9AC4",
+                            "#5CAC9E",
+                            "#7ABE79",
+                            "#81C784",
+                          ][idx];
+                          return (
+                            <div
+                              className="absolute top-1 flex items-center justify-center rounded-full border-2 transition-all duration-300"
+                              style={{
+                                left: "-31px",
+                                width: "18px",
+                                height: "18px",
+                                background: isActive ? stageColor : "var(--color-surface)",
+                                borderColor: isActive
+                                  ? stageColor
+                                  : "rgba(30,136,229,0.2)",
+                                boxShadow: isCurrent
+                                  ? `0 0 12px ${stageColor}b3`
+                                  : "none",
+                              }}
+                            >
+                              {isActive && !isCurrent && (
+                                <div className="h-2 w-2 rounded-full bg-white" />
+                              )}
+                            </div>
+                          );
+                        })()}
 
                         {/* Stage Text */}
                         <h4
-                          className={`font-bold text-sm ${
-                            isCurrent
-                              ? "text-[#1E88E5]"
-                              : isActive
-                              ? "text-[#E8F1FA]"
-                              : "text-[#8BAABF] opacity-60"
-                          }`}
+                          className="text-sm font-bold transition-colors duration-300"
+                          style={{
+                            color: isActive
+                              ? [
+                                  "#1E88E5",
+                                  "#3D9AC4",
+                                  "#5CAC9E",
+                                  "#7ABE79",
+                                  "#81C784",
+                                ][idx]
+                              : "var(--color-text-muted)",
+                            opacity: isActive ? 1 : 0.6,
+                          }}
                         >
                           {info.title}
                         </h4>
