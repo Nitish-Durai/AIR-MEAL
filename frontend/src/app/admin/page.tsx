@@ -88,29 +88,22 @@ function AirportSelect({
       <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-[var(--color-text-secondary)]">
         {label} <span className="text-[var(--color-error)]">*</span>
       </label>
-      <button
-        type="button"
-        onClick={() => { setOpen((o) => !o); setQuery(""); }}
-        className="flex h-11 w-full items-center justify-between gap-2 rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm text-[var(--color-text-primary)] focus:border-[var(--color-primary)] focus:outline-none"
-        style={{ minHeight: "44px" }}
-      >
-        <span className={selected ? "" : "text-[var(--color-text-secondary)]"}>
-          {selected ? `${selected.code} (${selected.city}, ${selected.country})` : placeholder}
-        </span>
-        <ChevronDown className={`h-4 w-4 flex-shrink-0 text-[var(--color-text-secondary)] transition-transform ${open ? "rotate-180" : ""}`} />
-      </button>
+      <div className="relative">
+        <input
+          type="text"
+          value={open ? query : (selected ? `${selected.code} (${selected.city}, ${selected.country})` : "")}
+          onChange={(e) => setQuery(e.target.value)}
+          onFocus={() => { setOpen(true); setQuery(""); }}
+          onKeyDown={(e) => { if (e.key === "Escape") { setOpen(false); setQuery(""); } }}
+          placeholder={placeholder}
+          className="h-11 w-full rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-surface)] pl-3 pr-9 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-secondary)] shadow-sm transition-all duration-200 hover:border-[var(--color-primary)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/25 cursor-pointer"
+          style={{ minHeight: "44px" }}
+        />
+        <ChevronDown className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-text-secondary)] transition-transform ${open ? "rotate-180" : ""}`} />
+      </div>
       {open && (
-        <div className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-[var(--radius-sm)] border border-[var(--color-primary)]/25 bg-[var(--color-surface)] shadow-2xl">
-          <div className="flex items-center gap-2 border-b border-[var(--color-border)] px-3 py-2">
-            <Search className="h-3.5 w-3.5 text-[var(--color-text-secondary)]" />
-            <input
-              autoFocus
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search airport…"
-              className="w-full bg-transparent text-sm text-[var(--color-text-primary)] placeholder-[#5C7E97] focus:outline-none"
-            />
-          </div>
+        <div className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-card)] shadow-xl">
+
           <div className="max-h-60 overflow-y-auto">
             {filtered.map((a) => {
               const isExcluded = a.code === excludeCode;
@@ -120,10 +113,10 @@ function AirportSelect({
                   type="button"
                   disabled={isExcluded}
                   onClick={() => { onChange(a.code); setOpen(false); }}
-                  className={`w-full px-3 py-2 text-left text-sm ${
+                  className={`w-full px-3.5 py-2.5 text-left text-sm transition-colors ${
                     isExcluded
-                      ? "cursor-not-allowed text-[#5C7E97] opacity-50"
-                      : "text-[var(--color-text-primary)] hover:bg-[var(--color-primary)]/10 cursor-pointer"
+                      ? "cursor-not-allowed text-[var(--color-text-muted)] opacity-50"
+                      : "text-[var(--color-text)] hover:bg-[var(--color-surface-alt)] cursor-pointer"
                   }`}
                 >
                   {a.code} ({a.city}, {a.country}){isExcluded ? " — in use" : ""}
@@ -186,29 +179,22 @@ function AirlineSelect({
       <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-[var(--color-text-secondary)]">
         Airline <span className="text-[var(--color-error)]">*</span>
       </label>
-      <button
-        type="button"
-        onClick={() => { setOpen((o) => !o); setQuery(""); }}
-        className="flex h-11 w-full items-center justify-between gap-2 rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm text-[var(--color-text-primary)] focus:border-[var(--color-primary)] focus:outline-none"
-        style={{ minHeight: "44px" }}
-      >
-        <span className={selected ? "" : "text-[var(--color-text-secondary)]"}>
-          {selected ? `${selected.name} (${selected.code})` : "Select airline…"}
-        </span>
-        <ChevronDown className={`h-4 w-4 flex-shrink-0 text-[var(--color-text-secondary)] transition-transform ${open ? "rotate-180" : ""}`} />
-      </button>
+      <div className="relative">
+        <input
+          type="text"
+          value={open ? query : (selected ? `${selected.name} (${selected.code})` : "")}
+          onChange={(e) => setQuery(e.target.value)}
+          onFocus={() => { setOpen(true); setQuery(""); }}
+          onKeyDown={(e) => { if (e.key === "Escape") { setOpen(false); setQuery(""); } }}
+          placeholder="Select airline…"
+          className="h-11 w-full rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-surface)] pl-3 pr-9 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-secondary)] shadow-sm transition-all duration-200 hover:border-[var(--color-primary)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/25 cursor-pointer"
+          style={{ minHeight: "44px" }}
+        />
+        <ChevronDown className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-text-secondary)] transition-transform ${open ? "rotate-180" : ""}`} />
+      </div>
       {open && (
-        <div className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-[var(--radius-sm)] border border-[var(--color-primary)]/25 bg-[var(--color-surface)] shadow-2xl">
-          <div className="flex items-center gap-2 border-b border-[var(--color-border)] px-3 py-2">
-            <Search className="h-3.5 w-3.5 text-[var(--color-text-secondary)]" />
-            <input
-              autoFocus
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search airline…"
-              className="w-full bg-transparent text-sm text-[var(--color-text-primary)] placeholder-[#5C7E97] focus:outline-none"
-            />
-          </div>
+        <div className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-card)] shadow-xl">
+
           <div className="max-h-60 overflow-y-auto">
             {loadErr && <div className="px-3 py-3 text-xs text-[var(--color-error-light)]">{loadErr}</div>}
             {!loadErr && filtered.map((a) => (
@@ -216,7 +202,7 @@ function AirlineSelect({
                 key={a.id}
                 type="button"
                 onClick={() => { onChange(a.id); setOpen(false); }}
-                className="w-full cursor-pointer px-3 py-2 text-left text-sm text-[var(--color-text-primary)] hover:bg-[var(--color-primary)]/10"
+                className="w-full cursor-pointer px-3.5 py-2.5 text-left text-sm text-[var(--color-text)] transition-colors hover:bg-[var(--color-surface-alt)]"
               >
                 {a.name} <span className="text-[var(--color-text-secondary)]">({a.code})</span>
               </button>

@@ -16,13 +16,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>("dark");
 
   useEffect(() => {
-    const saved =
-      typeof window !== "undefined"
-        ? (localStorage.getItem("airmeal-theme") as Theme | null)
-        : null;
-    if (saved === "light" || saved === "dark") {
-      setThemeState(saved);
+    const attr = document.documentElement.getAttribute("data-theme") as Theme | null;
+    if (attr === "light" || attr === "dark") {
+      setThemeState(attr);
+      return;
     }
+    const saved = localStorage.getItem("airmeal-theme") as Theme | null;
+    if (saved === "light" || saved === "dark") setThemeState(saved);
   }, []);
 
   useEffect(() => {

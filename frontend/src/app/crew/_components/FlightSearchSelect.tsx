@@ -38,28 +38,22 @@ export function FlightSearchSelect({ flights, value, onSelect }: Props) {
 
   return (
     <div ref={ref} className="relative" style={{ minWidth: 240 }}>
-      <button
-        type="button"
-        onClick={() => { setOpen((o) => !o); setQuery(""); }}
-        className="h-11 w-full px-3.5 flex items-center justify-between gap-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-sm text-[var(--color-text)] shadow-sm transition-all duration-200 hover:border-[var(--color-primary)] focus:outline-none focus:border-[var(--color-primary)]"
-        style={{ minHeight: "44px" }}
-      >
-        <span className="truncate">{label}</span>
-        <ChevronDown className="w-4 h-4 text-[var(--color-text-muted)] flex-shrink-0" />
-      </button>
+      <div className="relative">
+        <input
+          type="text"
+          value={open ? query : label}
+          onChange={(e) => setQuery(e.target.value)}
+          onFocus={() => { setOpen(true); setQuery(""); }}
+          onKeyDown={(e) => { if (e.key === "Escape") { setOpen(false); setQuery(""); } }}
+          placeholder="Search flight (e.g. SV200)…"
+          className="h-11 w-full pl-3.5 pr-9 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] shadow-sm transition-all duration-200 hover:border-[var(--color-primary)] focus:outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/25 cursor-pointer"
+          style={{ minHeight: "44px" }}
+        />
+        <ChevronDown className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)] transition-transform ${open ? "rotate-180" : ""}`} />
+      </div>
 
       {open && (
         <div className="absolute z-50 mt-1 w-full bg-[var(--color-card)] border border-[var(--color-border)] rounded-[var(--radius)] shadow-xl overflow-hidden">
-          <div className="flex items-center gap-2 px-3.5 py-2.5 border-b border-[var(--color-border)] bg-[var(--color-surface)]">
-            <Search className="w-4 h-4 text-[var(--color-text-muted)] flex-shrink-0" />
-            <input
-              autoFocus
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search flight (e.g. SV200)…"
-              className="w-full bg-transparent text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none"
-            />
-          </div>
           <div className="max-h-64 overflow-y-auto">
             <button
               type="button"

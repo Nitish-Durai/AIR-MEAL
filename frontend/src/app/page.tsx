@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { api } from "@/lib/api";
+import { AppBackground } from "@/components/AppBackground";
 
 type HealthStatus = "checking" | "ok" | "error";
 type Theme = "dark" | "light";
@@ -48,6 +49,7 @@ const roles = [
 export default function HomePage() {
   const [health, setHealth] = useState<HealthStatus>("checking");
   const [theme, setTheme] = useState<Theme>("dark");
+  const [mounted, setMounted] = useState(false);
   const [stats, setStats] = useState({ orders: 0, flights: 0, models: 0, foodUsed: 0 });
   const [targets, setTargets] = useState<{ orders: number; flights: number; models: number; food_used: number } | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -58,6 +60,7 @@ export default function HomePage() {
   useEffect(() => {
     const saved = (typeof window !== "undefined" && localStorage.getItem("airmeal-theme")) as Theme | null;
     if (saved === "light" || saved === "dark") setTheme(saved);
+    setMounted(true);
   }, []);
 
   useEffect(() => {
@@ -185,7 +188,7 @@ export default function HomePage() {
   return (
     <main style={{
       minHeight: "100vh",
-      background: `radial-gradient(ellipse 80% 60% at 50% -10%, ${C.bgGlow} 0%, transparent 70%), ${C.bg}`,
+      background: `radial-gradient(ellipse 80% 60% at 50% -10%, var(--landing-glow) 0%, transparent 70%), var(--landing-bg)`,
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
       padding: "2rem", gap: "2.5rem", position: "relative", overflow: "hidden",
       transition: "background 0.3s ease",
@@ -223,22 +226,24 @@ export default function HomePage() {
       {showIntro && (
         <div style={{
           position: "fixed", inset: 0, zIndex: 9999,
-          background: "#050F1E", display: "flex", flexDirection: "column",
+          background: "var(--intro-bg)",
+          display: "flex", flexDirection: "column",
           alignItems: "center", justifyContent: "center",
           opacity: fadeIntro ? 0 : 1, transition: "opacity 0.4s ease-in-out",
           pointerEvents: fadeIntro ? "none" : "auto",
         }}>
+          <AppBackground />
           <button
             onClick={() => { setFadeIntro(true); setTimeout(() => setShowIntro(false), 400); }}
             style={{
               position: "absolute", bottom: "2rem", right: "2rem",
-              background: "transparent", border: "1px solid rgba(255,255,255,0.15)",
-              color: "#8BAABF", fontSize: "0.75rem", padding: "0.5rem 1rem",
+              background: "transparent", border: dark ? "1px solid rgba(255,255,255,0.15)" : "1px solid rgba(10,47,94,0.18)",
+              color: dark ? "#8BAABF" : "#5C7E97", fontSize: "0.75rem", padding: "0.5rem 1rem",
               borderRadius: 6, cursor: "pointer", transition: "all 0.2s",
               fontFamily: "monospace", letterSpacing: "0.05em", zIndex: 10000
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"; e.currentTarget.style.color = "#E8F1FA"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)"; e.currentTarget.style.color = "#8BAABF"; }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = dark ? "rgba(255,255,255,0.3)" : "rgba(10,47,94,0.4)"; e.currentTarget.style.color = dark ? "#E8F1FA" : "#0A2F5E"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = dark ? "rgba(255,255,255,0.15)" : "rgba(10,47,94,0.18)"; e.currentTarget.style.color = dark ? "#8BAABF" : "#5C7E97"; }}
           >
             SKIP INTRO
           </button>
@@ -255,7 +260,7 @@ export default function HomePage() {
                     <circle cx="20" cy="80" r="4" fill="#1E88E5" style={{ filter: "drop-shadow(0 0 6px #1E88E5)" }} />
                     <circle cx="220" cy="80" r="4" fill="#FF6B35" style={{ filter: "drop-shadow(0 0 6px #FF6B35)" }} />
                     <g className="fly-plane">
-                      <path d="M12,0 L0,-4 L2,0 L0,4 Z" fill="#E8F1FA" transform="scale(1.5)" />
+                      <path d="M12,0 L0,-4 L2,0 L0,4 Z" fill={dark ? "#E8F1FA" : "#0A2F5E"} transform="scale(1.5)" />
                     </g>
                   </svg>
                 </div>
@@ -272,7 +277,7 @@ export default function HomePage() {
                               transformOrigin: "50px 50px",
                               animation: "fillCircle 1s cubic-bezier(0.25, 1, 0.5, 1) forwards"
                             }} />
-                    <path d="M32 62 h36 a18 18 0 0 0 -36 0 z M28 65 h44 v3 h-44 z" fill="#E8F1FA" />
+                    <path d="M32 62 h36 a18 18 0 0 0 -36 0 z M28 65 h44 v3 h-44 z" fill={dark ? "#E8F1FA" : "#0A2F5E"} />
                     <circle cx="50" cy="40" r="2.5" fill="#4CAF50" />
                   </svg>
                   <div style={{ fontSize: "1.4rem", fontWeight: 800, color: "#4CAF50", marginTop: "0.5rem", fontFamily: "monospace" }}>
@@ -285,7 +290,7 @@ export default function HomePage() {
                 <div style={{ display: "flex", gap: "1rem", alignItems: "center", animation: "fadeIn 0.3s ease-in-out forwards" }}>
                   <div style={{
                     background: "rgba(30,136,229,0.08)", border: "1px solid rgba(30,136,229,0.2)",
-                    borderRadius: 10, padding: "0.75rem 1.25rem", fontSize: "0.85rem", color: "#E8F1FA",
+                    borderRadius: 10, padding: "0.75rem 1.25rem", fontSize: "0.85rem", color: dark ? "#E8F1FA" : "#0A2F5E",
                     animation: "floatCard 2s ease-in-out infinite", animationDelay: "0s",
                     display: "flex", flexDirection: "column", gap: "0.25rem"
                   }}>
@@ -324,10 +329,10 @@ export default function HomePage() {
             <div style={{ minHeight: 90 }}>
               {introStep === 0 && (
                 <div style={{ animation: "fadeIn 0.3s ease-in-out" }}>
-                  <h2 style={{ fontSize: "1.1rem", fontWeight: 700, letterSpacing: "0.15em", color: "#E8F1FA", textTransform: "uppercase", marginBottom: "0.5rem" }}>
+                  <h2 style={{ fontSize: "1.1rem", fontWeight: 700, letterSpacing: "0.15em", color: dark ? "#E8F1FA" : "#0A2F5E", textTransform: "uppercase", marginBottom: "0.5rem" }}>
                     Route Optimization
                   </h2>
-                  <p style={{ fontSize: "0.9rem", color: "#8BAABF", lineHeight: 1.5 }}>
+                  <p style={{ fontSize: "0.9rem", color: dark ? "#8BAABF" : "#5C7E97", lineHeight: 1.5 }}>
                     Calculating the most efficient flight paths to minimize delay, manage crew logistics, and sync catering schedules in real-time.
                   </p>
                 </div>
@@ -337,7 +342,7 @@ export default function HomePage() {
                   <h2 style={{ fontSize: "1.1rem", fontWeight: 700, letterSpacing: "0.15em", color: "#4CAF50", textTransform: "uppercase", marginBottom: "0.5rem" }}>
                     Minimizing Food Wastage
                   </h2>
-                  <p style={{ fontSize: "0.9rem", color: "#8BAABF", lineHeight: 1.5 }}>
+                  <p style={{ fontSize: "0.9rem", color: dark ? "#8BAABF" : "#5C7E97", lineHeight: 1.5 }}>
                     Adjusting inventories dynamically at checkout to align flight load weights with actual passenger demand.
                   </p>
                 </div>
@@ -347,17 +352,17 @@ export default function HomePage() {
                   <h2 style={{ fontSize: "1.1rem", fontWeight: 700, letterSpacing: "0.15em", color: "#1E88E5", textTransform: "uppercase", marginBottom: "0.5rem" }}>
                     AI Recommendations
                   </h2>
-                  <p style={{ fontSize: "0.9rem", color: "#8BAABF", lineHeight: 1.5 }}>
+                  <p style={{ fontSize: "0.9rem", color: dark ? "#8BAABF" : "#5C7E97", lineHeight: 1.5 }}>
                     Tailored meal recommendations scanning preferences, logs, and allergens to match passenger dietary requirements.
                   </p>
                 </div>
               )}
               {introStep === 3 && (
                 <div style={{ animation: "fadeIn 0.3s ease-in-out" }}>
-                  <h2 style={{ fontSize: "1.2rem", fontWeight: 800, letterSpacing: "0.05em", color: "#E8F1FA", marginBottom: "0.5rem" }}>
+                  <h2 style={{ fontSize: "1.2rem", fontWeight: 800, letterSpacing: "0.05em", color: dark ? "#E8F1FA" : "#0A2F5E", marginBottom: "0.5rem" }}>
                     AirMeal Engine Initialized
                   </h2>
-                  <p style={{ fontSize: "0.9rem", color: "#8BAABF", lineHeight: 1.5 }}>
+                  <p style={{ fontSize: "0.9rem", color: dark ? "#8BAABF" : "#5C7E97", lineHeight: 1.5 }}>
                     Welcome to the next generation of smart, sustainable inflight dining.
                   </p>
                 </div>
@@ -366,7 +371,7 @@ export default function HomePage() {
 
             {/* Progress indicator */}
             <div style={{ width: "100%", maxWidth: 260, margin: "1rem auto 0" }}>
-              <div style={{ height: 2, background: "rgba(255,255,255,0.08)", borderRadius: 2, overflow: "hidden", position: "relative" }}>
+              <div style={{ height: 2, background: dark ? "rgba(255,255,255,0.08)" : "rgba(10,47,94,0.12)", borderRadius: 2, overflow: "hidden", position: "relative" }}>
                 <div style={{
                   position: "absolute", left: 0, top: 0, height: "100%", width: "100%",
                   background: "linear-gradient(90deg, #1E88E5, #FF6B35)",

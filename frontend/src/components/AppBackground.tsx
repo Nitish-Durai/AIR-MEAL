@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTheme } from "@/lib/theme-context";
 
 /**
@@ -10,6 +10,7 @@ import { useTheme } from "@/lib/theme-context";
  */
 export function AppBackground() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [ready, setReady] = useState(false);
   const { theme } = useTheme();
   const dark = theme === "dark";
 
@@ -18,7 +19,7 @@ export function AppBackground() {
     if (!cvs) return;
     const ctx = cvs.getContext("2d");
     if (!ctx) return;
-
+    setReady(true);
     let raf = 0;
     let W = 0, H = 0;
 
@@ -103,6 +104,8 @@ export function AppBackground() {
           width: "100%", height: "100%",
           pointerEvents: "none",
           zIndex: 0,
+          opacity: ready ? 1 : 0,
+          transition: "opacity 0.5s ease-in",
         }}
       />
 

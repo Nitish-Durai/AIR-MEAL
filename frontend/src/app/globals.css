@@ -221,6 +221,5 @@ input:-webkit-autofill:focus {
   border-color: var(--color-border) !important;
 }
 
-
-
-
+[data-theme="dark"] { --intro-bg: #050F1E; --intro-heading: #E8F1FA; --intro-muted: #8BAABF; --landing-bg: #050F1E; --landing-glow: rgba(30,136,229,0.18); }
+[data-theme="light"] { --intro-bg: #F4F8FC; --intro-heading: #0A2F5E; --intro-muted: #5C7E97; --landing-bg: #F4F8FC; --landing-glow: rgba(30,136,229,0.10); }
