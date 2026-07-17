@@ -26,11 +26,6 @@ from app.ws.connection_manager import manager
 
 router = APIRouter(prefix="/orders", tags=["orders"])
 
-# Single-select courses: an order may contain at most one item from each of
-# these categories, mirroring fixed-tray inflight service. Beverages, snacks,
-# and alcohol are unconstrained. Enforced server-side; the UI is never trusted.
-SINGLE_SELECT_CATEGORIES = {"Starters", "Main Course", "Desserts"}
-
 
 # Helper to convert ORM order to DTO
 def _to_order_dto(order: PassengerOrder) -> dict:
@@ -68,51 +63,24 @@ async def place_order(
     Place a new meal order.
     Enforces allergen hard-gate and handles atomic inventory lock reservation.
     """
-    # 1. Preload all ordered meals with their category (needed by both gates below).
-    meal_ids = [item.meal_id for item in payload.items]
-    meals = db.scalars(
-        select(MealItem)
-        .options(joinedload(MealItem.category))
-        .where(MealItem.id.in_(meal_ids))
-    ).all()
-    meal_map = {m.id: m for m in meals}
-
-    for item in payload.items:
-        if item.meal_id not in meal_map:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Meal {item.meal_id} not found",
-            )
-
-    # 1a. Course Gate: at most one item per single-select course, qty 1 each.
-    course_counts: dict[str, int] = {}
-    for item in payload.items:
-        meal = meal_map[item.meal_id]
-        if meal.is_alcohol:
-            continue
-        category_name = meal.category.name if meal.category else None
-        if category_name not in SINGLE_SELECT_CATEGORIES:
-            continue
-        if item.qty != 1:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"Only one {category_name.rstrip('s')} may be ordered per meal service.",
-            )
-        course_counts[category_name] = course_counts.get(category_name, 0) + 1
-        if course_counts[category_name] > 1:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"Only one {category_name.rstrip('s')} may be ordered per meal service.",
-            )
-
-    # 1b. Allergen Gate: verify passenger allergies if a profile exists
+    # 1. Allergen Gate: verify passenger allergies if a profile exists
     profile = db.scalar(
         select(PassengerProfile).where(PassengerProfile.passenger_id == current_user.id)
     )
     if profile:
         allergy_flags = profile.allergy_flags or {}
+        # Preload all ordered meals to check allergens
+        meal_ids = [item.meal_id for item in payload.items]
+        meals = db.scalars(select(MealItem).where(MealItem.id.in_(meal_ids))).all()
+        meal_map = {m.id: m for m in meals}
+
         for item in payload.items:
-            meal = meal_map[item.meal_id]
+            meal = meal_map.get(item.meal_id)
+            if not meal:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Meal {item.meal_id} not found",
+                )
             meal_allergens = meal.allergen_flags or {}
             for allergen, is_allergic in allergy_flags.items():
                 if is_allergic and meal_allergens.get(allergen):
