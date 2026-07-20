@@ -27,6 +27,7 @@ from app.ml.forecasting import _flight_features  # reuse flight feature extracto
 from app.models.flight import Flight
 from app.models.meal import FlightInventory, MealItem
 from app.models.ml import ModelRegistry
+from app.models.waste_intervention import WasteIntervention
 
 MODEL_NAME = "waste_predictor"
 MODEL_VERSION = "1.0.0"
@@ -161,6 +162,28 @@ def predict_waste(
         return []
 
     meal_ids = [inv.meal_id for inv in inventories]
+
+    # Recorded crew dispositions for this flight. A meal that has been actioned
+    # has its surplus redirected to a destination, so it is largely no longer at
+    # risk of being wasted. We read these here and reduce the forecast for actioned
+    # (meal, cabin) pairs by a redirection efficiency — the number the crew sees
+    # falls because the food now has somewhere to go, not by fiat.
+    intervention_rows = db.execute(
+        select(WasteIntervention).where(WasteIntervention.flight_id == flight_id)
+    ).scalars().all()
+
+    # How effective each disposition is at actually redirecting surplus away from
+    # waste. Deliberately below 1.0: redistribution is imperfect, so a marked meal's
+    # expected waste is REDUCED, not erased. This keeps the closed loop honest.
+    REDIRECTION_EFFICIENCY = {
+        "offer_free":     0.80,  # released to cabin — most surplus taken, not all
+        "crew_meal":      0.90,  # allocated to crew — near-certain consumption
+        "offer_discount": 0.60,  # offered at discount — fewest takers
+    }
+    action_by_target: dict[tuple[uuid.UUID, str], str] = {
+        (r.meal_id, r.cabin_class): r.action for r in intervention_rows
+    }
+
     meals = db.execute(select(MealItem).where(MealItem.id.in_(meal_ids))).scalars().all()
     meal_name_map: dict[uuid.UUID, str] = {m.id: m.name for m in meals}
     meal_category_map: dict[uuid.UUID, str] = {
@@ -220,6 +243,16 @@ def predict_waste(
             predicted_waste = inv.initial_qty * 0.10
             method = "fallback_estimate"
 
+        # If this meal/cabin has a recorded disposition, reduce its forecast by the
+        # disposition's redirection efficiency — the surplus mostly (not wholly) finds
+        # a destination. Acting on a meal visibly lowers expected waste, but never
+        # claims perfect recovery.
+        target = (inv.meal_id, inv.cabin_class)
+        is_actioned = target in action_by_target
+        if is_actioned:
+            eff = REDIRECTION_EFFICIENCY.get(action_by_target[target], 0.80)
+            predicted_waste = predicted_waste * (1.0 - eff)
+
         waste_ratio = predicted_waste / inv.initial_qty if inv.initial_qty > 0 else 0.0
         # Zero-waste principle: any meal with ≥1 predicted unit wasted
         # should be acted on so it gets to someone (passenger, discount, or crew).
@@ -227,7 +260,7 @@ def predict_waste(
         # there is nothing left to redirect — so it does not raise an intervention,
         # even though its planning-time forecast is still reported.
         remaining_stock = inv.initial_qty - inv.reserved_qty - inv.served_qty
-        should_intervene = predicted_waste >= 1 and remaining_stock > 0
+        should_intervene = predicted_waste >= 1 and remaining_stock > 0 and not is_actioned
 
         suggestion = None
         if should_intervene:
@@ -248,6 +281,7 @@ def predict_waste(
             "predicted_waste":  round(predicted_waste, 1),
             "waste_pct":        round(waste_ratio * 100.0, 1),
             "should_intervene": should_intervene,
+            "is_actioned":      is_actioned,
             "suggestion":       suggestion,
             "method":           method,
         })

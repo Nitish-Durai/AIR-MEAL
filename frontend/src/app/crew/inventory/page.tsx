@@ -51,6 +51,9 @@ function CrewInventoryContent() {
   const [error, setError] = useState<string | null>(null);
   const [interventions, setInterventions] = useState<Record<string, string>>({});
   const [savingKey, setSavingKey] = useState<string | null>(null);
+  // Pre-intervention predicted waste, captured the first time a meal is marked,
+  // so the card can show a before → after comparison after the forecast recomputes.
+  const [baselineWaste, setBaselineWaste] = useState<Record<string, number>>({});
   const [confirmingReset, setConfirmingReset] = useState(false);
 
   const fetchWasteAnalysis = async () => {
@@ -94,6 +97,11 @@ function CrewInventoryContent() {
   function handleIntervention(mealId: string, cabinClass: string, action: string) {
     const key = `${mealId}|${cabinClass}`;
     const previous = interventions[key];
+    // Capture the current (pre-action) predicted waste as the baseline, once.
+    if (baselineWaste[key] === undefined) {
+      const pred = predictions.find(p => `${p.meal_id}|${p.cabin_class}` === key);
+      if (pred) setBaselineWaste(prev => ({ ...prev, [key]: pred.predicted_waste }));
+    }
     // Optimistic: update state synchronously so the card marks + moves instantly.
     setInterventions(prev => ({ ...prev, [key]: action }));
     // Fire-and-forget save; roll back only if it fails.
@@ -101,7 +109,10 @@ function CrewInventoryContent() {
       `/api/v1/flights/${flightId}/waste-interventions`,
       { meal_id: mealId, cabin_class: cabinClass, action },
       accessToken || undefined
-    ).catch((err) => {
+    ).then(() => {
+      // Re-pull the forecast so the recomputed (lower) predicted waste is shown.
+      fetchWasteAnalysis();
+    }).catch((err) => {
       console.error("Failed to record intervention", err);
       setInterventions(prev => {
         const next = { ...prev };
@@ -125,7 +136,10 @@ function CrewInventoryContent() {
     api.delete(
       `/api/v1/flights/${flightId}/waste-interventions?${params.toString()}`,
       accessToken || undefined
-    ).catch((err) => {
+    ).then(() => {
+      // Re-pull the forecast so reverting restores the original predicted waste.
+      fetchWasteAnalysis();
+    }).catch((err) => {
       console.error("Failed to revert intervention", err);
       // Roll back: restore the previous mark if it existed.
       if (previous !== undefined) {
@@ -142,7 +156,10 @@ function CrewInventoryContent() {
     api.delete(
       `/api/v1/flights/${flightId}/waste-interventions`,
       accessToken || undefined
-    ).catch((err) => {
+    ).then(() => {
+      // Re-pull the forecast so all predicted-waste values reset.
+      fetchWasteAnalysis();
+    }).catch((err) => {
       console.error("Failed to reset interventions", err);
       // Roll back to whatever was marked before.
       setInterventions(previous);
@@ -176,8 +193,13 @@ function CrewInventoryContent() {
 
   const filteredPredictions = predictions.filter(matchesFilters);
 
+  // Show a card if it still needs action OR has already been actioned (so the
+  // redirected state stays visible in place rather than vanishing).
   const activeInterventions = filteredPredictions
-    .filter(p => p.should_intervene && p.suggestion)
+    .filter(p => {
+      const key = `${p.meal_id}|${p.cabin_class}`;
+      return (p.should_intervene && p.suggestion) || interventions[key];
+    })
     .map((p, i) => ({ p, i }))
     .sort((a, b) => {
       const aMarked = interventions[`${a.p.meal_id}|${a.p.cabin_class}`] ? 1 : 0;
@@ -186,6 +208,28 @@ function CrewInventoryContent() {
       return a.i - b.i;
     })
     .map(x => x.p);
+
+  // Cabin-level waste totals for the summary bar: baseline (pre-action) vs current.
+  const wasteSummary = (() => {
+    let baseline = 0;
+    let current = 0;
+    let redirectedCount = 0;
+    for (const p of filteredPredictions) {
+      const key = `${p.meal_id}|${p.cabin_class}`;
+      const marked = !!interventions[key];
+      const base = baselineWaste[key] ?? p.predicted_waste;
+      baseline += base;
+      current += p.predicted_waste;
+      if (marked) redirectedCount += 1;
+    }
+    const reducedPct = baseline > 0 ? ((baseline - current) / baseline) * 100 : 0;
+    return {
+      baseline: Math.round(baseline * 10) / 10,
+      current: Math.round(current * 10) / 10,
+      reducedPct: Math.round(reducedPct * 10) / 10,
+      redirectedCount,
+    };
+  })();
 
   return (
     <div className="min-h-screen text-[#E8F1FA] font-sans pb-12">
@@ -364,10 +408,34 @@ function CrewInventoryContent() {
             {/* Active Interventions Warnings */}
             {activeInterventions.length > 0 && (
               <div className="space-y-3">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-[#FF6B35] flex items-center gap-1.5">
-                  <AlertTriangle className="w-4 h-4" />
-                  <span>Waste Reduction Interventions Required</span>
-                </h3>
+                <div className="flex flex-col gap-2">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-[#FF6B35] flex items-center gap-1.5">
+                    <AlertTriangle className="w-4 h-4" />
+                    <span>Waste Reduction Interventions</span>
+                  </h3>
+                  {wasteSummary.redirectedCount > 0 && (
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-[var(--radius)] border border-[var(--color-success)]/35 bg-[var(--color-success)]/10 px-4 py-3">
+                      <span className="text-sm font-semibold text-[var(--color-text-primary)]">
+                        Forecast waste this view:
+                      </span>
+                      <span className="text-sm text-[var(--color-text-muted)] line-through">
+                        {wasteSummary.baseline} units
+                      </span>
+                      <span className="text-lg font-extrabold text-[var(--color-success-light)]">
+                        → {wasteSummary.current} units
+                      </span>
+                      <span className="rounded-full bg-[var(--color-success)]/20 px-2.5 py-1 text-sm font-extrabold text-[var(--color-success-light)]">
+                        −{wasteSummary.reducedPct}%
+                      </span>
+                      <span className="text-xs text-[var(--color-text-muted)]">
+                        after {wasteSummary.redirectedCount} intervention{wasteSummary.redirectedCount > 1 ? "s" : ""}
+                      </span>
+                    </div>
+                  )}
+                  <p className="text-[10px] italic text-[var(--color-text-muted)]/70">
+                    Decision support — logs a disposition and recomputes forecast waste; does not execute a transaction.
+                  </p>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {activeInterventions.map(item => (
                     <div
@@ -381,9 +449,11 @@ function CrewInventoryContent() {
                             {item.cabin_class}
                           </span>
                         </div>
-                        <p className="text-xs text-[#C2410C] mt-2 font-medium bg-[rgba(255,107,53,0.08)] p-2.5 rounded border border-[rgba(255,107,53,0.2)]">
-                          {item.suggestion}
-                        </p>
+                        {item.suggestion && (
+                          <p className="text-xs text-[#C2410C] mt-2 font-medium bg-[rgba(255,107,53,0.08)] p-2.5 rounded border border-[rgba(255,107,53,0.2)]">
+                            {item.suggestion}
+                          </p>
+                        )}
                         {(() => {
                           const key = `${item.meal_id}|${item.cabin_class}`;
                           const current = interventions[key];
@@ -392,34 +462,26 @@ function CrewInventoryContent() {
                             <div className="mt-2">
                               {current ? (
                                 <div className="flex items-center gap-2">
-                                  <div className="inline-flex items-center gap-1 rounded-[var(--radius-xs)] bg-[var(--color-success)]/15 px-2 py-1 text-[10px] font-bold text-[var(--color-success-light)]">
-                                    <Check className="h-3 w-3" /> Marked: {current === "offer_free" ? "Offer Free" : current === "offer_discount" ? "Offer Discounted" : "Crew Meal"}
+                                  <div className="inline-flex items-center gap-1.5 rounded-[var(--radius-sm)] bg-[var(--color-success)]/18 px-3 py-1.5 text-sm font-bold text-[var(--color-success-light)]">
+                                    <Check className="h-4 w-4" /> Redirected: {current === "offer_free" ? "Released to Cabin" : "Allocated to Crew"}
                                   </div>
                                   <button
                                     type="button"
                                     onClick={() => handleRevert(item.meal_id, item.cabin_class)}
-                                    className="inline-flex items-center gap-1 rounded-[var(--radius-xs)] border border-[var(--color-border)] px-2 py-1 text-[10px] font-bold text-[var(--color-text-secondary)] hover:border-[var(--color-error)]/40 hover:text-[var(--color-error-light)] transition-colors cursor-pointer"
+                                    className="inline-flex items-center gap-1 rounded-[var(--radius-sm)] border border-[var(--color-border)] px-2.5 py-1.5 text-xs font-bold text-[var(--color-text-secondary)] hover:border-[var(--color-error)]/40 hover:text-[var(--color-error-light)] transition-colors cursor-pointer"
                                   >
-                                    <RotateCcw className="h-3 w-3" /> Undo
+                                    <RotateCcw className="h-3.5 w-3.5" /> Undo
                                   </button>
                                 </div>
                               ) : (
-                                <div className="grid grid-cols-3 gap-2">
+                                <div className="grid grid-cols-2 gap-2">
                                   <button
                                     disabled={isSaving}
                                     onClick={() => handleIntervention(item.meal_id, item.cabin_class, "offer_free")}
                                     className="text-[13px] px-3 py-2 rounded-md bg-[#DCF0DD] border border-[#81C784] text-[#1B5E20] font-bold hover:bg-[#C8E6C9] transition-colors disabled:opacity-50 cursor-pointer text-center"
                                     style={{ minHeight: "40px" }}
                                   >
-                                    Offer Free
-                                  </button>
-                                  <button
-                                    disabled={isSaving}
-                                    onClick={() => handleIntervention(item.meal_id, item.cabin_class, "offer_discount")}
-                                    className="text-[13px] px-3 py-2 rounded-md bg-[#D6E9FB] border border-[#64B5F6] text-[#0D47A1] font-bold hover:bg-[#BBDEFB] transition-colors disabled:opacity-50 cursor-pointer text-center"
-                                    style={{ minHeight: "40px" }}
-                                  >
-                                    Offer Discounted
+                                    Release to Cabin
                                   </button>
                                   <button
                                     disabled={isSaving}
@@ -427,7 +489,7 @@ function CrewInventoryContent() {
                                     className="text-[13px] px-3 py-2 rounded-md bg-[#FFE8CC] border border-[#FFB74D] text-[#BF360C] font-bold hover:bg-[#FFE0B2] transition-colors disabled:opacity-50 cursor-pointer text-center"
                                     style={{ minHeight: "40px" }}
                                   >
-                                    Crew Meal
+                                    Allocate to Crew
                                   </button>
                                 </div>
                               )}
@@ -436,7 +498,24 @@ function CrewInventoryContent() {
                         })()}
                       </div>
                       <div className="flex items-center justify-between text-[10px] text-[#9A3412] border-t border-[rgba(255,107,53,0.1)] pt-2 mt-1">
-                        <span>Predicted waste: <strong className="text-[#FF6B35]">{item.predicted_waste} / {item.initial_qty}</strong> ({item.waste_pct.toFixed(1)}%)</span>
+                        {(() => {
+                          const k = `${item.meal_id}|${item.cabin_class}`;
+                          const base = baselineWaste[k];
+                          const isMarked = !!interventions[k];
+                          if (isMarked && base !== undefined && base > item.predicted_waste) {
+                            return (
+                              <span className="text-sm">
+                                Predicted waste:{" "}
+                                <strong className="text-[var(--color-text-muted)] line-through">{base}</strong>{" "}
+                                <strong className="text-base text-[var(--color-success-light)]">→ {item.predicted_waste}</strong>{" "}
+                                <span className="text-[var(--color-text-muted)]">/ {item.initial_qty}</span>
+                              </span>
+                            );
+                          }
+                          return (
+                            <span>Predicted waste: <strong className="text-[#FF6B35]">{item.predicted_waste} / {item.initial_qty}</strong> ({item.waste_pct.toFixed(1)}%)</span>
+                          );
+                        })()}
                         {(item.method === "fallback_estimate" || item.method === "forecast_inflight") && (
                           <span className="bg-[rgba(255,255,255,0.06)] px-1.5 py-0.5 rounded text-[9px] uppercase font-bold tracking-wider">
                             {item.method === "forecast_inflight" ? "forecast" : "estimate"}
@@ -492,6 +571,14 @@ function CrewInventoryContent() {
                               {(item.method === "fallback_estimate" || item.method === "forecast_inflight") && (
                                 <span className="bg-[rgba(255,183,77,0.1)] text-[#FFB74D] border border-[rgba(255,183,77,0.2)] px-1.5 py-0.5 rounded text-[9px] uppercase font-bold tracking-wider">
                                   {item.method === "forecast_inflight" ? "forecast" : "estimate"}
+                                </span>
+                              )}
+                              {!item.should_intervene && !interventions[`${item.meal_id}|${item.cabin_class}`] && item.predicted_waste >= 1 && (
+                                <span
+                                  className="bg-[rgba(139,170,191,0.12)] text-[#8BAABF] border border-[rgba(139,170,191,0.25)] px-2.5 py-1 rounded text-[11px] uppercase font-bold tracking-wider"
+                                  title="Forecast waste, but remaining stock is already reserved or served — no surplus left to redirect."
+                                >
+                                  committed · not recoverable
                                 </span>
                               )}
                             </div>

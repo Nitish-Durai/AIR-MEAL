@@ -76,24 +76,38 @@ def _seat_distance(a: str, b: str) -> float:
     return abs(r1 - r2) + 0.5 * abs(c1 - c2)
 
 
+# Weight on priority-weighted service position. Higher = priority dominates
+# distance; lower = distance dominates. Tuned so a critical seat (score ≥8)
+# is pulled toward the front even at a real distance cost, while distance
+# still orders seats of equal priority.
+PRIORITY_POSITION_WEIGHT = 3.0
+
+
 def _tour_cost(
     tour: list[int],
     dist_matrix: np.ndarray,
     priority_scores: list[float],
 ) -> float:
     """
-    Total cost of a tour: total travel distance + priority violation penalty.
+    Total cost of a tour: travel distance + priority-weighted service delay.
 
-    Penalty: for each pair of adjacent tasks, if a lower-priority task precedes
-    a higher-priority one, add the difference as a penalty.
+    Distance term: sum of seat-to-seat travel along the tour.
+
+    Priority term: each task contributes priority × (position in tour). Serving
+    a high-priority task later multiplies a large priority by a large position,
+    so the optimiser is pushed to serve urgent seats early — regardless of who
+    sits immediately before them. This is a weighted-completion-time objective,
+    the standard way to encode "serve urgent passengers sooner".
     """
     total_dist = 0.0
-    priority_penalty = 0.0
     for k in range(len(tour) - 1):
         i, j = tour[k], tour[k + 1]
         total_dist += dist_matrix[i][j]
-        if priority_scores[j] > priority_scores[i]:
-            priority_penalty += (priority_scores[j] - priority_scores[i]) * 2.0
+
+    priority_penalty = 0.0
+    for position, task_idx in enumerate(tour):
+        priority_penalty += priority_scores[task_idx] * position * PRIORITY_POSITION_WEIGHT
+
     return total_dist + priority_penalty
 
 

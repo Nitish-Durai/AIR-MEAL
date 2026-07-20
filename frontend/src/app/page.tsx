@@ -188,7 +188,7 @@ export default function HomePage() {
   return (
     <main style={{
       minHeight: "100vh",
-      background: `radial-gradient(ellipse 80% 60% at 50% -10%, var(--landing-glow) 0%, transparent 70%), var(--landing-bg)`,
+      background: `radial-gradient(ellipse 80% 60% at 50% -10%, ${C.bgGlow} 0%, transparent 70%), ${C.bg}`,
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
       padding: "2rem", gap: "2.5rem", position: "relative", overflow: "hidden",
       transition: "background 0.3s ease",

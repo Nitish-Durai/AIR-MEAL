@@ -281,7 +281,7 @@ def get_waste_analysis_admin(
 class WasteInterventionRequest(BaseModel):
     meal_id: uuid.UUID
     cabin_class: str
-    action: str  # "offer_free" | "offer_discount" | "crew_meal"
+    action: str  # "offer_free" | "crew_meal"
 
 
 
@@ -297,10 +297,10 @@ def set_waste_intervention(
     offer it free, offer it at a discount, or reassign it as a crew meal.
     Upserts on (flight_id, meal_id, cabin_class).
     """
-    if body.action not in ("offer_free", "offer_discount", "crew_meal"):
+    if body.action not in ("offer_free", "crew_meal"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="action must be one of: offer_free, offer_discount, crew_meal",
+            detail="action must be one of: offer_free, crew_meal",
         )
     existing = db.scalar(
         select(WasteIntervention).where(
