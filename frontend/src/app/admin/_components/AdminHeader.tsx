@@ -101,18 +101,20 @@ export function AdminHeader({ activeTab, flightId, onFlightChange }: AdminHeader
             </Link>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-[#8BAABF] font-semibold">Flight Context:</span>
-            {loading ? (
-              <Loader2 className="w-4 h-4 text-[#1E88E5] animate-spin" />
-            ) : (
-              <FlightSearchSelect
-                flights={flights}
-                value={flightId}
-                onSelect={onFlightChange}
-              />
-            )}
-          </div>
+          {activeTab !== "qr" && activeTab !== "models" && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-[#8BAABF] font-semibold">Flight Context:</span>
+              {loading ? (
+                <Loader2 className="w-4 h-4 text-[#1E88E5] animate-spin" />
+              ) : (
+                <FlightSearchSelect
+                  flights={flights}
+                  value={flightId}
+                  onSelect={onFlightChange}
+                />
+              )}
+            </div>
+          )}
         </div>
       </div>
     </header>

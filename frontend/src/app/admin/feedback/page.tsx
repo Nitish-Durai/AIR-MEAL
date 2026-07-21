@@ -6,7 +6,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { AdminHeader } from "../_components/AdminHeader";
-import { Loader2, Star, AlertTriangle } from "lucide-react";
+import { Loader2, Star, AlertTriangle, TrendingDown } from "lucide-react";
 
 interface FeedbackItem {
   feedback_id: string;
@@ -39,12 +39,18 @@ function AdminFeedbackContent() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchFeedback = async () => {
+    // Gate on flight selection: with no flight chosen we show an empty state
+    // rather than dumping every flight's reviews. Skip the fetch entirely.
+    if (!flightId) {
+      setFeedbackList([]);
+      setLoading(false);
+      setError(null);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
-      const path = flightId
-        ? `/api/v1/admin/feedback?flight_id=${flightId}`
-        : "/api/v1/admin/feedback";
+      const path = `/api/v1/admin/feedback?flight_id=${flightId}`;
       const res = await api.get<{ data: FeedbackItem[] }>(path, accessToken || undefined);
       setFeedbackList(res.data || []);
     } catch (err) {
@@ -143,7 +149,15 @@ function AdminFeedbackContent() {
           </div>
         )}
 
-        {loading ? (
+        {!flightId ? (
+          <div className="bg-[#0A1929] border border-[rgba(30,136,229,0.15)] rounded-xl flex flex-col items-center justify-center text-center py-20 px-6">
+            <TrendingDown className="w-10 h-10 text-[#1E88E5] mb-4" />
+            <h3 className="font-extrabold text-base tracking-tight text-[var(--color-text)]">No Flight Selected</h3>
+            <p className="text-sm text-[#8BAABF] mt-1.5 max-w-md">
+              Please select a flight context in the header to view passenger ratings and reviews.
+            </p>
+          </div>
+        ) : loading ? (
           <div className="flex flex-col items-center justify-center py-20 text-[#8BAABF]">
             <Loader2 className="w-10 h-10 text-[#1E88E5] animate-spin mb-4" />
             <p className="text-sm">Loading passenger feedback...</p>
