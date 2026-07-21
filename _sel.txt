@@ -1,0 +1,103 @@
+﻿
+  frontend\src\app\admin\page.tsx:689:                    Aircraft Type <span 
+className="text-[#EF5350]">*</span>
+  frontend\src\app\admin\page.tsx:690:                  </label>
+> frontend\src\app\admin\page.tsx:691:                  <select
+  frontend\src\app\admin\page.tsx:692:                    value={aircraftType}
+  frontend\src\app\admin\page.tsx:693:                    onChange={(e) => 
+setAircraftType(e.target.value)}
+  frontend\src\app\admin\page.tsx:694:                    className="w-full h-11 px-3 
+bg-[#050F1E] border border-[rgba(30,136,229,0.15)] rounded-lg text-sm text-[#E8F1FA] 
+focus:outline-none focus:border-[#1E88E5]"
+  frontend\src\app\admin\page.tsx:695:                    style={{ minHeight: "44px" }}
+  frontend\src\app\admin\page.tsx:696:                  >
+  frontend\src\app\admin\page.tsx:697:                    <option value="">Select 
+aircraft…</option>
+  frontend\src\app\admin\page.tsx:698:                    <option 
+value="B777-300ER">Boeing 777-300ER (wide-body)</option>
+  frontend\src\app\admin\page.tsx:699:                    <option value="A380-800">Airbus 
+A380-800 (double-deck)</option>
+  frontend\src\app\admin\page.tsx:700:                    <option value="A320neo">Airbus 
+A320neo (narrow-body)</option>
+  frontend\src\app\admin\page.tsx:701:                    <option value="B737-800">Boeing 
+737-800 (narrow-body)</option>
+  frontend\src\app\admin\page.tsx:702:                  </select>
+  frontend\src\app\admin\page.tsx:703:                </div>
+  frontend\src\app\admin\page.tsx:704:
+  frontend\src\app\admin\page.tsx:705:                <div>
+  frontend\src\app\admin\page.tsx:706:                  <div className="flex items-center 
+gap-1.5 mb-1 relative">
+  frontend\src\app\admin\page.tsx:707:                    <label className="text-xs 
+font-semibold text-[#8BAABF] uppercase tracking-wider">
+  frontend\src\app\admin\page.tsx:708:                      Load Factor
+  frontend\src\app\admin\page.tsx:709:                    </label>
+  frontend\src\app\admin\page.tsx:722:                    )}
+  frontend\src\app\admin\page.tsx:723:                  </div>
+> frontend\src\app\admin\page.tsx:724:                  <select
+  frontend\src\app\admin\page.tsx:725:                    value={loadFactor}
+  frontend\src\app\admin\page.tsx:726:                    onChange={(e) => 
+setLoadFactor(e.target.value)}
+  frontend\src\app\admin\page.tsx:727:                    className="w-full h-11 px-3 
+bg-[#050F1E] border border-[rgba(30,136,229,0.15)] rounded-lg text-sm text-[#E8F1FA] 
+focus:outline-none focus:border-[#1E88E5]"
+  frontend\src\app\admin\page.tsx:728:                    style={{ minHeight: "44px" }}
+  frontend\src\app\admin\page.tsx:729:                  >
+  frontend\src\app\admin\page.tsx:730:                    <option value="">Select load 
+factor (optional)…</option>
+  frontend\src\app\admin\page.tsx:731:                    <option value="0.50">50% 
+full</option>
+  frontend\src\app\admin\page.tsx:732:                    <option value="0.55">55% 
+full</option>
+  frontend\src\app\admin\page.tsx:733:                    <option value="0.60">60% 
+full</option>
+  frontend\src\app\admin\page.tsx:734:                    <option value="0.65">65% 
+full</option>
+  frontend\src\app\admin\page.tsx:735:                    <option value="0.70">70% 
+full</option>
+  frontend\src\app\admin\page.tsx:736:                    <option value="0.75">75% 
+full</option>
+  frontend\src\app\admin\page.tsx:737:                    <option value="0.80">80% 
+full</option>
+  frontend\src\app\admin\page.tsx:738:                    <option value="0.85">85% 
+full</option>
+  frontend\src\app\admin\page.tsx:739:                    <option value="0.90">90% 
+full</option>
+  frontend\src\app\admin\page.tsx:740:                    <option value="0.95">95% 
+full</option>
+  frontend\src\app\admin\page.tsx:741:                    <option value="1.00">100% 
+full</option>
+  frontend\src\app\admin\page.tsx:742:                  </select>
+  frontend\src\app\admin\page.tsx:747:                    Status <span 
+className="text-[#EF5350]">*</span>
+  frontend\src\app\admin\page.tsx:748:                  </label>
+> frontend\src\app\admin\page.tsx:749:                  <select
+  frontend\src\app\admin\page.tsx:750:                    value={status}
+  frontend\src\app\admin\page.tsx:751:                    onChange={(e) => 
+setStatus(e.target.value)}
+  frontend\src\app\admin\page.tsx:752:                    className="w-full h-11 px-3 
+bg-[#050F1E] border border-[rgba(30,136,229,0.15)] rounded-lg text-sm text-[#E8F1FA] 
+focus:outline-none focus:border-[#1E88E5]"
+  frontend\src\app\admin\page.tsx:753:                    style={{ minHeight: "44px" }}
+  frontend\src\app\admin\page.tsx:754:                  >
+  frontend\src\app\admin\page.tsx:755:                    <option 
+value="scheduled">Scheduled</option>
+  frontend\src\app\admin\page.tsx:756:                    <option 
+value="active">Active</option>
+  frontend\src\app\admin\page.tsx:757:                    <option 
+value="landed">Landed</option>
+  frontend\src\app\admin\page.tsx:758:                    <option 
+value="delayed">Delayed</option>
+  frontend\src\app\admin\page.tsx:759:                  </select>
+  frontend\src\app\admin\page.tsx:760:                </div>
+  frontend\src\app\admin\page.tsx:761:
+  frontend\src\app\admin\page.tsx:762:                <button
+  frontend\src\app\admin\page.tsx:763:                  type="button"
+  frontend\src\app\admin\page.tsx:764:                  onClick={handleCreateFlight}
+  frontend\src\app\admin\page.tsx:765:                  disabled={submitting}
+  frontend\src\app\admin\page.tsx:766:                  className="w-full h-11 mt-2 
+bg-[#90CAF9] hover:bg-[#64B5F6] disabled:bg-[rgba(30,136,229,0.3)] 
+disabled:text-[#8BAABF] text-[#0A2F5E] font-bold rounded-lg text-xs flex items-center 
+justify-center gap-1.5 transition-colors cursor-pointer"
+  frontend\src\app\admin\page.tsx:767:                  style={{ minHeight: "44px" }}
+
+

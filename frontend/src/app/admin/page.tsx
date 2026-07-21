@@ -21,6 +21,7 @@ import {
   Trash2,
   X
 } from "lucide-react";
+import { SimpleSelect } from "./_components/SimpleSelect";
 
 const AIRPORTS: { code: string; city: string; country: string }[] = [
   { code: "LHR", city: "London", country: "UK" },
@@ -688,18 +689,17 @@ function AdminDashboardContent() {
                   <label className="block text-xs font-semibold text-[#8BAABF] uppercase tracking-wider mb-1">
                     Aircraft Type <span className="text-[#EF5350]">*</span>
                   </label>
-                  <select
+                  <SimpleSelect
                     value={aircraftType}
-                    onChange={(e) => setAircraftType(e.target.value)}
-                    className="w-full h-11 px-3 bg-[#050F1E] border border-[rgba(30,136,229,0.15)] rounded-lg text-sm text-[#E8F1FA] focus:outline-none focus:border-[#1E88E5]"
-                    style={{ minHeight: "44px" }}
-                  >
-                    <option value="">Select aircraft…</option>
-                    <option value="B777-300ER">Boeing 777-300ER (wide-body)</option>
-                    <option value="A380-800">Airbus A380-800 (double-deck)</option>
-                    <option value="A320neo">Airbus A320neo (narrow-body)</option>
-                    <option value="B737-800">Boeing 737-800 (narrow-body)</option>
-                  </select>
+                    onChange={setAircraftType}
+                    placeholder="Select aircraft…"
+                    options={[
+                      { value: "B777-300ER", label: "Boeing 777-300ER (wide-body)" },
+                      { value: "A380-800", label: "Airbus A380-800 (double-deck)" },
+                      { value: "A320neo", label: "Airbus A320neo (narrow-body)" },
+                      { value: "B737-800", label: "Boeing 737-800 (narrow-body)" },
+                    ]}
+                  />
                 </div>
 
                 <div>
@@ -721,42 +721,40 @@ function AdminDashboardContent() {
                       </div>
                     )}
                   </div>
-                  <select
+                  <SimpleSelect
                     value={loadFactor}
-                    onChange={(e) => setLoadFactor(e.target.value)}
-                    className="w-full h-11 px-3 bg-[#050F1E] border border-[rgba(30,136,229,0.15)] rounded-lg text-sm text-[#E8F1FA] focus:outline-none focus:border-[#1E88E5]"
-                    style={{ minHeight: "44px" }}
-                  >
-                    <option value="">Select load factor (optional)…</option>
-                    <option value="0.50">50% full</option>
-                    <option value="0.55">55% full</option>
-                    <option value="0.60">60% full</option>
-                    <option value="0.65">65% full</option>
-                    <option value="0.70">70% full</option>
-                    <option value="0.75">75% full</option>
-                    <option value="0.80">80% full</option>
-                    <option value="0.85">85% full</option>
-                    <option value="0.90">90% full</option>
-                    <option value="0.95">95% full</option>
-                    <option value="1.00">100% full</option>
-                  </select>
+                    onChange={setLoadFactor}
+                    placeholder="Select load factor (optional)…"
+                    options={[
+                      { value: "0.50", label: "50% full" },
+                      { value: "0.55", label: "55% full" },
+                      { value: "0.60", label: "60% full" },
+                      { value: "0.65", label: "65% full" },
+                      { value: "0.70", label: "70% full" },
+                      { value: "0.75", label: "75% full" },
+                      { value: "0.80", label: "80% full" },
+                      { value: "0.85", label: "85% full" },
+                      { value: "0.90", label: "90% full" },
+                      { value: "0.95", label: "95% full" },
+                      { value: "1.00", label: "100% full" },
+                    ]}
+                  />
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-[#8BAABF] uppercase tracking-wider mb-1">
                     Status <span className="text-[#EF5350]">*</span>
                   </label>
-                  <select
+                  <SimpleSelect
                     value={status}
-                    onChange={(e) => setStatus(e.target.value)}
-                    className="w-full h-11 px-3 bg-[#050F1E] border border-[rgba(30,136,229,0.15)] rounded-lg text-sm text-[#E8F1FA] focus:outline-none focus:border-[#1E88E5]"
-                    style={{ minHeight: "44px" }}
-                  >
-                    <option value="scheduled">Scheduled</option>
-                    <option value="active">Active</option>
-                    <option value="landed">Landed</option>
-                    <option value="delayed">Delayed</option>
-                  </select>
+                    onChange={setStatus}
+                    options={[
+                      { value: "scheduled", label: "Scheduled" },
+                      { value: "active", label: "Active" },
+                      { value: "landed", label: "Landed" },
+                      { value: "delayed", label: "Delayed" },
+                    ]}
+                  />
                 </div>
 
                 <button

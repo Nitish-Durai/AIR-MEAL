@@ -8,7 +8,7 @@ import { QrCode, Printer, Info } from "lucide-react";
 // The single, permanent boarding QR. Printed once, affixed to every seat, valid
 // for every flight forever. Passengers scan it, sign in, then enter their PNR +
 // last name to be routed to their specific flight and seat.
-const BOARDING_URL = "https://air-meal-lad4.vercel.app";
+const BOARDING_URL = "https://airmeal.vercel.app";
 const QR_IMAGE = `https://api.qrserver.com/v1/create-qr-code/?size=340x340&margin=12&data=${encodeURIComponent(BOARDING_URL)}`;
 
 function AdminQRCodesContent() {
