@@ -14,6 +14,7 @@ Design goals
 
 from __future__ import annotations
 
+import os
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -51,6 +52,34 @@ EMBEDDING_DIM = 32
 _DEMO_HASH: str | None = None
 _CREW_HASH: str | None = None
 _ADMIN_HASH: str | None = None
+_OWNER_HASH: str | None = None
+
+# ---------------------------------------------------------------------------
+# Reference epoch for all generated timestamps.
+#
+# Flight departure/arrival times — and therefore flight STATUS, which is derived
+# from them — were previously computed relative to datetime.now(). That made the
+# dataset depend on when the generator ran: a flight near a status boundary would
+# be "in_flight" on one run and "landed" on the next, which silently changed
+# wasted_qty (only landed flights accrue waste) and every time-derived forecaster
+# feature. Row counts stayed identical while target values moved, so the two
+# LightGBM models were not reproducible across reseeds despite a fixed RNG seed.
+#
+# Anchoring to a fixed epoch makes the generated dataset a pure function of the
+# seed. Override with AIRMEAL_DATA_EPOCH (ISO-8601) only if wall-clock behaviour
+# is explicitly wanted.
+# ---------------------------------------------------------------------------
+
+_DEFAULT_EPOCH = datetime(2026, 7, 1, 12, 0, 0, tzinfo=timezone.utc)
+
+
+def _reference_now() -> datetime:
+    """Fixed reference time for generated data (see note above)."""
+    raw = os.environ.get("AIRMEAL_DATA_EPOCH")
+    if raw:
+        parsed = datetime.fromisoformat(raw)
+        return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+    return _DEFAULT_EPOCH
 
 
 def _get_demo_hash() -> str:
@@ -59,6 +88,15 @@ def _get_demo_hash() -> str:
         print("  Hashing demo passenger password (once)…")
         _DEMO_HASH = hash_password("airmeal123")
     return _DEMO_HASH
+
+
+def _get_owner_hash() -> str:
+    """Password hash for the pinned demo booking owner account."""
+    global _OWNER_HASH
+    if _OWNER_HASH is None:
+        print("  Hashing demo owner password (once)…")
+        _OWNER_HASH = hash_password("nitish@2005")
+    return _OWNER_HASH
 
 
 def _get_crew_hash() -> str:
@@ -251,8 +289,8 @@ def _gen_crew(
                 assigned_zone=zones[i % len(zones)],
                 hashed_password=admin_hash if is_admin else crew_hash,
                 email=(
-                    "admin1@sv.airmeal.demo" if is_admin
-                    else f"crew{emp_counter}@{airline.code.lower()}.airmeal.demo"
+                    "admin@airmeal.demo" if is_admin
+                    else f"crew{emp_counter}@airmeal.demo"
                 ),
             ))
             emp_counter += 1
@@ -387,7 +425,7 @@ def _gen_flights_and_seats(
 ) -> tuple[list[Flight], dict[tuple, int]]:
     """Returns (flights, {(flight_id, cabin_class): seat_count})."""
     aircraft_names = list(AIRCRAFT_CONFIGS.keys())
-    now = datetime.now(timezone.utc)
+    now = _reference_now()
     flights: list[Flight] = []
     seats: list[FlightSeat] = []
     seat_counts: dict[tuple, int] = {}  # (flight_id, cabin_class) -> n_seats
@@ -896,7 +934,9 @@ def _gen_bookings(
     from app.models.flight import FlightSeat as _FlightSeat
 
     DEMO_PNR = "SV2K9C"
-    DEMO_LAST_NAME = "Tang"
+    DEMO_LAST_NAME = "Durai"
+    DEMO_FIRST_NAME = "Nitish"
+    DEMO_EMAIL = "nitish@gmail.com"
     SV209_ID = uuid.UUID("b159aea5-2cf0-4e54-a8b2-183078d41915")
     DEMO_SEAT = "Y12C"
 
@@ -925,9 +965,15 @@ def _gen_bookings(
     pool_size = len(passengers)
 
     # Reserve one passenger as the pinned demo passenger (first passenger).
+    # This account owns the pinned demo booking (SV2K9C). Boarding enforces
+    # that the authenticated account is the passenger the booking was issued
+    # to, so the demo login and the demo booking must be the same identity.
     demo_passenger = passengers[0]
+    demo_passenger.first_name = DEMO_FIRST_NAME
     demo_passenger.last_name = DEMO_LAST_NAME
     demo_passenger.pnr = DEMO_PNR
+    demo_passenger.email = DEMO_EMAIL
+    demo_passenger.hashed_password = _get_owner_hash()
     used_passenger_idxs.add(0)
 
     for flight in flights:

@@ -28,6 +28,14 @@ export default function PassengerPage() {
   const [boarding, setBoarding] = useState(false);
   const [formError, setFormError] = useState("");
 
+  // Boarding confirmation: set after a successful claim so the passenger can
+  // verify the booking is theirs before continuing to the menu.
+  const [boardedInfo, setBoardedInfo] = useState<BoardResp | null>(null);
+
+  // Lockout countdown: seconds remaining after the server returns 429 for
+  // too many failed boarding claims. Zero means the form is usable.
+  const [lockoutSeconds, setLockoutSeconds] = useState(0);
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       // Always start a fresh boarding session: clear any stored flight so the
@@ -100,6 +108,7 @@ export default function PassengerPage() {
   interface BoardResp {
     flight_id: string;
     flight_number: string;
+    first_name: string;
     origin: string;
     destination: string;
     seat_number: string;
@@ -134,14 +143,36 @@ export default function PassengerPage() {
       localStorage.setItem("airmeal_flight_id", res.flight_id);
       localStorage.setItem("airmeal_cabin_class", res.cabin_class);
       localStorage.setItem("airmeal_seat_number", res.seat_number);
-      router.push("/passenger/onboarding");
+      setBoardedInfo(res);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Could not find that booking.";
       setFormError(msg);
+      // Parse the retry window out of the rate-limit message so the form can
+      // disable itself until the lockout expires.
+      const match = /try again in (\d+) seconds/i.exec(msg);
+      if (match) {
+        setLockoutSeconds(parseInt(match[1], 10));
+        // The button shows the live countdown, so keep the banner static.
+        setFormError("Too many failed boarding attempts.");
+      }
     } finally {
       setBoarding(false);
     }
   };
+
+  useEffect(() => {
+    if (lockoutSeconds <= 0) return;
+    const id = setInterval(() => {
+      setLockoutSeconds((s) => {
+        if (s <= 1) {
+          setFormError("");
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, [lockoutSeconds > 0]);
 
   const handleClearSession = () => {
     localStorage.removeItem("airmeal_flight_id");
@@ -172,14 +203,116 @@ export default function PassengerPage() {
 
         {/* Dashboard Card */}
         <div className="glass-card p-6 sm:p-8 mb-6 transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:shadow-[0_20px_50px_rgba(30,136,229,0.15)]">
-          <div className="text-center mb-6">
-            <div className="text-4xl mb-3">🛫</div>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--color-text)]">
-              Welcome aboard, {firstName}!
-            </h1>
-          </div>
+          {!boardedInfo && (
+            <div className="text-center mb-6">
+              <div className="text-4xl mb-3">🛫</div>
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--color-text)]">
+                Ready to board, {firstName}?
+              </h1>
+            </div>
+          )}
 
-          {activeFlightId ? (
+          {boardedInfo ? (
+            /* Boarding confirmation — lets the passenger verify the booking
+               resolved to their own seat before continuing to the menu. */
+            <div>
+              <div className="text-center mb-7">
+                <div className="w-14 h-14 rounded-full bg-[rgba(76,175,80,0.10)] border border-[rgba(76,175,80,0.32)] flex items-center justify-center mx-auto mb-5">
+                  <CheckCircle className="w-7 h-7 text-[#4CAF50]" />
+                </div>
+                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--color-text)] mb-2">
+                  Welcome aboard, {boardedInfo.first_name}
+                </h1>
+                <p className="text-sm text-[#8BAABF]">Your booking is confirmed</p>
+              </div>
+
+              <div className="border-t border-dashed border-[rgba(30,136,229,0.22)] pt-6 mb-6">
+                <div className="flex items-end justify-between mb-7">
+                  <div className="min-w-[76px]">
+                    <div className="text-3xl font-bold tracking-tight leading-none text-[var(--color-text)]">
+                      {boardedInfo.origin}
+                    </div>
+                  </div>
+                  <div className="flex-1 px-4 text-center">
+                    <div className="text-[11px] text-[#8BAABF] tracking-widest mb-2">
+                      {boardedInfo.flight_number}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-px bg-[rgba(30,136,229,0.28)]" />
+                      <ArrowRight className="w-4 h-4 text-[#1E88E5]" />
+                      <div className="flex-1 h-px bg-[rgba(30,136,229,0.28)]" />
+                    </div>
+                  </div>
+                  <div className="min-w-[76px] text-right">
+                    <div className="text-3xl font-bold tracking-tight leading-none text-[var(--color-text)]">
+                      {boardedInfo.destination}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <div className="flex-1 bg-[rgba(30,136,229,0.07)] rounded-lg p-3">
+                    <div className="text-[10px] text-[#8BAABF] tracking-wider mb-1.5">SEAT</div>
+                    <div className="text-base font-semibold text-[var(--color-text)]">
+                      {boardedInfo.seat_number}
+                    </div>
+                  </div>
+                  <div className="flex-1 bg-[rgba(30,136,229,0.07)] rounded-lg p-3">
+                    <div className="text-[10px] text-[#8BAABF] tracking-wider mb-1.5">CABIN</div>
+                    <div className="text-base font-semibold capitalize text-[var(--color-text)]">
+                      {boardedInfo.cabin_class}
+                    </div>
+                  </div>
+                  <div className="flex-1 bg-[rgba(30,136,229,0.07)] rounded-lg p-3">
+                    <div className="text-[10px] text-[#8BAABF] tracking-wider mb-1.5">STATUS</div>
+                    <div className="text-base font-semibold text-[#4CAF50] capitalize">
+                      {boardedInfo.status.replace(/_/g, " ")}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-dashed border-[rgba(30,136,229,0.22)] pt-6">
+                <button
+                  onClick={() => router.push("/passenger/onboarding")}
+                  className="w-full flex items-center justify-center gap-2 h-12 font-semibold rounded-lg text-sm cursor-pointer select-none transition-colors"
+                  style={{
+                    background: "#64B5F6",
+                    border: "1px solid #64B5F6",
+                    color: "white",
+                  }}
+                  onMouseEnter={(e) => {
+                    const el = e.currentTarget as HTMLButtonElement;
+                    el.style.background = "#42A5F5";
+                    el.style.borderColor = "#42A5F5";
+                  }}
+                  onMouseLeave={(e) => {
+                    const el = e.currentTarget as HTMLButtonElement;
+                    el.style.background = "#64B5F6";
+                    el.style.borderColor = "#64B5F6";
+                  }}
+                >
+                  <span>Continue to menu</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+
+                <p className="text-[11px] text-[#8BAABF] text-center mt-4">
+                  Not your booking?{" "}
+                  <button
+                    onClick={() => {
+                      handleClearSession();
+                      setBoardedInfo(null);
+                      setPnrInput("");
+                      setLastNameInput("");
+                    }}
+                    className="text-[#1E88E5] hover:underline cursor-pointer"
+                  >
+                    Return to boarding
+                  </button>
+                </p>
+              </div>
+            </div>
+          ) : activeFlightId ? (
             /* Active flight session overview */
             <div className="space-y-4">
               <div className="bg-[var(--color-surface)] border border-[rgba(30,136,229,0.15)] rounded-lg p-4">
@@ -305,6 +438,7 @@ export default function PassengerPage() {
                   type="text"
                   placeholder="e.g. SV2K9C"
                   value={pnrInput}
+                  disabled={lockoutSeconds > 0}
                   onChange={(e) => setPnrInput(e.target.value.toUpperCase())}
                   className="w-full h-11 px-3 bg-[var(--color-surface)] border border-[rgba(30,136,229,0.15)] rounded-lg text-sm text-[var(--color-text)] placeholder-[#8BAABF] focus:outline-none focus:border-[#1E88E5] uppercase tracking-widest"
                 />
@@ -318,6 +452,7 @@ export default function PassengerPage() {
                   type="text"
                   placeholder="e.g. Tang"
                   value={lastNameInput}
+                  disabled={lockoutSeconds > 0}
                   onChange={(e) => setLastNameInput(e.target.value)}
                   className="w-full h-11 px-3 bg-[var(--color-surface)] border border-[rgba(30,136,229,0.15)] rounded-lg text-sm text-[var(--color-text)] placeholder-[#8BAABF] focus:outline-none focus:border-[#1E88E5]"
                 />
@@ -332,8 +467,8 @@ export default function PassengerPage() {
               <div className="flex flex-col gap-2 pt-2">
                 <button
                   type="submit"
-                  disabled={boarding}
-                  className="w-full flex items-center justify-center gap-2 h-11 font-bold rounded-lg text-sm cursor-pointer select-none disabled:opacity-60"
+                  disabled={boarding || lockoutSeconds > 0}
+                  className="w-full flex items-center justify-center gap-2 h-11 font-bold rounded-lg text-sm cursor-pointer select-none disabled:opacity-60 disabled:cursor-not-allowed"
                   style={{
                     background: "#90CAF9",
                     border: "1px solid #64B5F6",
@@ -341,7 +476,13 @@ export default function PassengerPage() {
                     transition: "transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease",
                   }}
                 >
-                  <span>{boarding ? "Finding your flight\u2026" : "Board Flight"}</span>
+                  <span>
+                    {lockoutSeconds > 0
+                      ? `Locked \u2014 retry in ${Math.floor(lockoutSeconds / 60)}:${String(lockoutSeconds % 60).padStart(2, "0")}`
+                      : boarding
+                        ? "Finding your flight\u2026"
+                        : "Board Flight"}
+                  </span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>

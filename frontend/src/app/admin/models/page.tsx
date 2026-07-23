@@ -347,7 +347,7 @@ function AdminModelsContent() {
                   </div>
 
                   {/* Actions footer */}
-                  <div className="mt-6 border-t border-[rgba(30,136,229,0.08)] pt-4">
+                  <div className="mt-6">
                     {isRetraining ? (
                       <button
                         type="button"
@@ -390,10 +390,10 @@ function AdminModelsContent() {
                       <button
                         type="button"
                         onClick={() => setConfirmingModel(name)}
-                        className="w-full h-11 bg-transparent hover:bg-[rgba(30,136,229,0.08)] border border-[rgba(30,136,229,0.25)] text-[#1E88E5] font-bold rounded-lg text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                        style={{ minHeight: "44px" }}
+                        className="w-full h-12 bg-transparent hover:bg-[rgba(30,136,229,0.08)] border border-[rgba(30,136,229,0.25)] text-[#1E88E5] font-bold rounded-lg text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                        style={{ minHeight: "48px" }}
                       >
-                        <RefreshCw className="w-3.5 h-3.5" />
+                        <RefreshCw className="w-4 h-4" />
                         <span>Retrain Model</span>
                       </button>
                     )}

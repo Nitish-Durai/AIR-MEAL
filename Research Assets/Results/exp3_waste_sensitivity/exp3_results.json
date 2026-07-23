@@ -1,0 +1,118 @@
+{
+  "experiment": "exp3_waste_sensitivity",
+  "run_at": "2026-07-23T07:05:44.595004+00:00",
+  "scope": "in_flight flights only (the closed loop does not run elsewhere)",
+  "n_flights": 19,
+  "n_inventory_rows": 2094,
+  "n_actionable_rows": 2058,
+  "total_forecast_waste": 7443.75,
+  "recoverable_waste": 7414.81,
+  "committed_waste": 28.95,
+  "actionable_waste": 7389.16,
+  "recoverable_pct_of_forecast": 99.61,
+  "committed_pct_of_forecast": 0.39,
+  "actionable_pct_of_forecast": 99.27,
+  "efficiency_sweep": [
+    {
+      "efficiency": 0.5,
+      "waste_removed": 3694.58,
+      "residual_forecast": 3749.17,
+      "reduction_pct_of_total": 49.63,
+      "reduction_pct_of_recoverable": 49.83
+    },
+    {
+      "efficiency": 0.6,
+      "waste_removed": 4433.49,
+      "residual_forecast": 3010.26,
+      "reduction_pct_of_total": 59.56,
+      "reduction_pct_of_recoverable": 59.79
+    },
+    {
+      "efficiency": 0.7,
+      "waste_removed": 5172.41,
+      "residual_forecast": 2271.34,
+      "reduction_pct_of_total": 69.49,
+      "reduction_pct_of_recoverable": 69.76
+    },
+    {
+      "efficiency": 0.8,
+      "waste_removed": 5911.33,
+      "residual_forecast": 1532.43,
+      "reduction_pct_of_total": 79.41,
+      "reduction_pct_of_recoverable": 79.72
+    },
+    {
+      "efficiency": 0.9,
+      "waste_removed": 6650.24,
+      "residual_forecast": 793.51,
+      "reduction_pct_of_total": 89.34,
+      "reduction_pct_of_recoverable": 89.69
+    },
+    {
+      "efficiency": 1.0,
+      "waste_removed": 7389.16,
+      "residual_forecast": 54.6,
+      "reduction_pct_of_total": 99.27,
+      "reduction_pct_of_recoverable": 99.65
+    }
+  ],
+  "production_efficiency": 0.8,
+  "production_reduction_pct": 79.41,
+  "reduction_band_pct": [
+    49.63,
+    99.27
+  ],
+  "by_category": [
+    {
+      "category": "Beverages",
+      "inventory_rows": 663,
+      "forecast_waste": 2929.65,
+      "recoverable": 2923.28,
+      "committed": 6.36,
+      "actionable": 2923.28,
+      "recoverable_pct": 99.78,
+      "share_of_total_forecast_pct": 39.36
+    },
+    {
+      "category": "Desserts",
+      "inventory_rows": 363,
+      "forecast_waste": 1465.06,
+      "recoverable": 1465.06,
+      "committed": 0.0,
+      "actionable": 1465.06,
+      "recoverable_pct": 100.0,
+      "share_of_total_forecast_pct": 19.68
+    },
+    {
+      "category": "Snacks",
+      "inventory_rows": 357,
+      "forecast_waste": 1219.16,
+      "recoverable": 1207.08,
+      "committed": 12.07,
+      "actionable": 1207.08,
+      "recoverable_pct": 99.01,
+      "share_of_total_forecast_pct": 16.38
+    },
+    {
+      "category": "Starters",
+      "inventory_rows": 347,
+      "forecast_waste": 1014.97,
+      "recoverable": 1014.97,
+      "committed": 0.0,
+      "actionable": 1013.03,
+      "recoverable_pct": 100.0,
+      "share_of_total_forecast_pct": 13.64
+    },
+    {
+      "category": "Main Course",
+      "inventory_rows": 364,
+      "forecast_waste": 814.92,
+      "recoverable": 804.41,
+      "committed": 10.51,
+      "actionable": 780.71,
+      "recoverable_pct": 98.71,
+      "share_of_total_forecast_pct": 10.95
+    }
+  ],
+  "notes": "Recoverable vs committed is MEASURED from reservation state (initial - reserved - served) and is independent of any assumed efficiency. The closed-loop reduction is proportional to assumed redirection efficiency by construction, so it is reported as a band across EFFICIENCY_GRID rather than a single point estimate. Committed waste is an upper bound on what no intervention can reach."
+}

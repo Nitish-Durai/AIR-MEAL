@@ -69,6 +69,7 @@ class BoardRequest(BaseModel):
 class BoardResponse(BaseModel):
     flight_id: uuid.UUID
     flight_number: str
+    first_name: str
     origin: str
     destination: str
     seat_number: str

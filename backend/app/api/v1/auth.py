@@ -1,5 +1,6 @@
 """Auth endpoints: register, login, refresh, me."""
 
+import time
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -30,6 +31,56 @@ from app.schemas.auth import (
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+
+# ---------------------------------------------------------------------------
+# Boarding claim rate limiting
+#
+# A PNR + surname pair is a low-entropy credential, so repeated failed claims
+# are throttled per authenticated account. Successful claims are not counted,
+# so legitimate re-boarding is never penalised.
+#
+# Limitation: this counter is in-process, so it resets on restart and is not
+# shared across workers. A multi-instance deployment would back it with Redis.
+# ---------------------------------------------------------------------------
+
+BOARD_MAX_FAILURES = 5
+BOARD_WINDOW_SECONDS = 300  # 5 minutes
+
+_board_failures: dict[str, list[float]] = {}
+
+
+def _board_recent_failures(account_id: str) -> list[float]:
+    """Return this account's failure timestamps inside the current window."""
+    cutoff = time.monotonic() - BOARD_WINDOW_SECONDS
+    recent = [t for t in _board_failures.get(account_id, []) if t > cutoff]
+    if recent:
+        _board_failures[account_id] = recent
+    else:
+        _board_failures.pop(account_id, None)
+    return recent
+
+
+def _board_guard(account_id: str) -> None:
+    """Reject the claim if this account has exhausted its failure budget."""
+    recent = _board_recent_failures(account_id)
+    if len(recent) >= BOARD_MAX_FAILURES:
+        # The lockout lifts once the oldest failure leaves the window.
+        elapsed = time.monotonic() - recent[0]
+        retry_after = max(1, int(BOARD_WINDOW_SECONDS - elapsed))
+        raise HTTPException(
+            status.HTTP_429_TOO_MANY_REQUESTS,
+            f"Too many failed boarding attempts. Try again in {retry_after} seconds.",
+            headers={"Retry-After": str(retry_after)},
+        )
+
+
+def _board_record_failure(account_id: str) -> None:
+    _board_failures.setdefault(account_id, []).append(time.monotonic())
+
+
+def _board_clear_failures(account_id: str) -> None:
+    _board_failures.pop(account_id, None)
 
 
 # ---------------------------------------------------------------------------
@@ -192,19 +243,36 @@ def board(
     """
     pnr = payload.pnr.strip().upper()
     last_name = payload.last_name.strip()
+    account_id = str(current_user.id)
+
+    _board_guard(account_id)
 
     booking = db.scalar(select(Booking).where(Booking.pnr == pnr))
     if not booking:
+        _board_record_failure(account_id)
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Booking reference not found")
 
     booked_passenger = db.scalar(
         select(Passenger).where(Passenger.id == booking.passenger_id)
     )
     if not booked_passenger or booked_passenger.last_name.strip().lower() != last_name.lower():
+        _board_record_failure(account_id)
         raise HTTPException(
             status.HTTP_401_UNAUTHORIZED,
             "Last name does not match this booking reference",
         )
+
+    # Ownership check: the authenticated account must be the passenger this
+    # booking was issued to. Without this, any logged-in passenger who guesses
+    # a valid PNR and surname could open another passenger's seat context.
+    if booking.passenger_id != current_user.id:
+        _board_record_failure(account_id)
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN,
+            "This booking is not associated with your account",
+        )
+
+    _board_clear_failures(account_id)
 
     flight = db.scalar(select(Flight).where(Flight.id == booking.flight_id))
     if not flight:
@@ -213,6 +281,7 @@ def board(
     return BoardResponse(
         flight_id=flight.id,
         flight_number=flight.flight_number,
+        first_name=booked_passenger.first_name,
         origin=flight.origin,
         destination=flight.destination,
         seat_number=booking.seat_number,
