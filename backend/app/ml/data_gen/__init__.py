@@ -548,8 +548,23 @@ def _gen_inventory(
 
     # How many distinct meals per cabin (realistic subset of catalog)
     n_stocked = {"economy": 34, "premium_economy": 32, "business": 30, "first": 28}
-    # Base qty per stocked meal (generous so served_qty never violates CHECK)
-    base_qty = {"economy": 30, "premium_economy": 22, "business": 15, "first": 8}
+    # ── Demand-proportional stocking ──────────────────────────────────────
+    # Loading a flat quantity per meal regardless of passenger count produces
+    # implausible over-catering: nearly every meal ends the flight with surplus,
+    # so any waste-reduction figure becomes an artefact of the loading policy
+    # rather than a property of the system. Real caterers uplift against a
+    # forecast passenger load plus a service-level margin that guards against
+    # stock-outs.
+    #
+    # Expected demand per cabin = seats x load_factor x order rate x mean items
+    # per order. That budget is spread across the stocked meals and scaled by
+    # OVERCATER_MARGIN, which is a calibration parameter tuned so the realised
+    # waste fraction falls within the range reported in published cabin-waste
+    # audits. The tuned value is reported in the paper.
+    ORDER_RATE_ASSUMED = 0.70    # mirrors ORDER_RATE in _gen_orders_tasks_feedback
+    MEAN_ITEMS_PER_ORDER = 1.5   # ITEMS_PER_ORDER is uniform on (1, 2)
+    OVERCATER_MARGIN = 1.25      # calibration knob — see note above
+    MIN_QTY_PER_MEAL = 2         # never stock a meal at zero
 
     # Indices of non-alcohol and all meals, for pool selection
     alcohol_mask = [bool(getattr(m, "is_alcohol", False)) for m in meals]
@@ -586,7 +601,16 @@ def _gen_inventory(
                     fill = rng.choice(pool, size=min(remaining, len(pool)), replace=False)
                     chosen.update(int(x) for x in fill)
             chosen_idxs = list(chosen)
-            qty = base_qty[cabin_class]
+            # Uplift against forecast demand for THIS cabin on THIS flight,
+            # spread across the meals actually stocked, plus the margin.
+            _expected_items = (
+                n_seats
+                * (flight.load_factor or 0.8)
+                * ORDER_RATE_ASSUMED
+                * MEAN_ITEMS_PER_ORDER
+            )
+            _per_meal = (_expected_items * OVERCATER_MARGIN) / max(1, len(chosen_idxs))
+            qty = max(MIN_QTY_PER_MEAL, int(np.ceil(_per_meal)))
             for idx in chosen_idxs:
                 meal = meals[int(idx)]
                 inv = FlightInventory(

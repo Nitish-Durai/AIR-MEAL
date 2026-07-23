@@ -1,38 +1,38 @@
 # Experiment 3 - Recoverable Waste and Redirection Sensitivity
 
-Run: 2026-07-23T07:05:44.595004+00:00
+Run: 2026-07-23T07:36:08.264601+00:00
 Scope: in_flight flights only (the closed loop does not run elsewhere)
-Flights: 19 | Inventory rows: 2094 | Actionable rows: 2058
+Flights: 19 | Inventory rows: 2094 | Actionable rows: 179
 
 ## Recoverable vs committed (measured, assumption-free)
 
 | Quantity | Units | % of forecast |
 |---|---|---|
-| Total forecast waste | 7443.75 | 100.00 |
-| Recoverable (stock remains) | 7414.81 | 99.61 |
-| Committed (already reserved/served) | 28.95 | 0.39 |
-| Actionable (recoverable and >= 1 unit) | 7389.16 | 99.27 |
+| Total forecast waste | 1220.3 | 100.00 |
+| Recoverable (stock remains) | 811.45 | 66.5 |
+| Committed (already reserved/served) | 408.85 | 33.5 |
+| Actionable (recoverable and >= 1 unit) | 277.88 | 22.77 |
 
 ## Sensitivity to redirection efficiency
 
 | Efficiency | Waste removed | Residual forecast | % of total | % of recoverable |
 |---|---|---|---|---|
-| 0.5 | 3694.58 | 3749.17 | 49.63 | 49.83 |
-| 0.6 | 4433.49 | 3010.26 | 59.56 | 59.79 |
-| 0.7 | 5172.41 | 2271.34 | 69.49 | 69.76 |
-| 0.8 | 5911.33 | 1532.43 | 79.41 | 79.72 |
-| 0.9 | 6650.24 | 793.51 | 89.34 | 89.69 |
-| 1.0 | 7389.16 | 54.6 | 99.27 | 99.65 |
+| 0.5 | 138.94 | 1081.36 | 11.39 | 17.12 |
+| 0.6 | 166.73 | 1053.57 | 13.66 | 20.55 |
+| 0.7 | 194.52 | 1025.79 | 15.94 | 23.97 |
+| 0.8 | 222.3 | 998.0 | 18.22 | 27.4 |
+| 0.9 | 250.09 | 970.21 | 20.49 | 30.82 |
+| 1.0 | 277.88 | 942.42 | 22.77 | 34.24 |
 
-Deployed assumption (0.8): 79.41% of total forecast waste removed.
-Band across swept efficiencies: 49.63% - 99.27%.
+Deployed assumption (0.8): 18.22% of total forecast waste removed.
+Band across swept efficiencies: 11.39% - 22.77%.
 
 ## By category
 
 | Category | Rows | Forecast | Recoverable | Committed | Recoverable % | Share of forecast % |
 |---|---|---|---|---|---|---|
-| Beverages | 663 | 2929.65 | 2923.28 | 6.36 | 99.78 | 39.36 |
-| Desserts | 363 | 1465.06 | 1465.06 | 0.0 | 100.0 | 19.68 |
-| Snacks | 357 | 1219.16 | 1207.08 | 12.07 | 99.01 | 16.38 |
-| Starters | 347 | 1014.97 | 1014.97 | 0.0 | 100.0 | 13.64 |
-| Main Course | 364 | 814.92 | 804.41 | 10.51 | 98.71 | 10.95 |
+| Beverages | 663 | 482.89 | 306.1 | 176.79 | 63.39 | 39.57 |
+| Desserts | 363 | 240.83 | 179.53 | 61.3 | 74.55 | 19.74 |
+| Snacks | 357 | 198.21 | 113.04 | 85.17 | 57.03 | 16.24 |
+| Starters | 347 | 166.32 | 133.1 | 33.22 | 80.03 | 13.63 |
+| Main Course | 364 | 132.05 | 79.69 | 52.37 | 60.34 | 10.82 |
