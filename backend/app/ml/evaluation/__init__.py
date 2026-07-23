@@ -31,8 +31,14 @@ def ndcg_at_k(recommended: list, relevant_set: set, k: int = 10) -> float:
     relevances = [1.0 if item in relevant_set else 0.0 for item in recommended[:k]]
     actual_dcg = dcg_at_k(relevances, k)
 
-    # Ideal DCG: rank all relevant items first
-    ideal_relevances = sorted(relevances, reverse=True)
+    # Ideal DCG: the best achievable ranking places min(|relevant|, k) relevant
+    # items in the top positions. It must be derived from how many relevant
+    # items the user actually has, NOT from how many the model happened to
+    # retrieve. Sorting the retrieved relevances (the previous approach) makes
+    # the denominator shrink whenever the model misses relevant items, which
+    # inflates NDCG exactly when the model performs worst.
+    n_ideal = min(len(relevant_set), k)
+    ideal_relevances = [1.0] * n_ideal + [0.0] * (k - n_ideal)
     ideal_dcg = dcg_at_k(ideal_relevances, k)
 
     if ideal_dcg == 0.0:

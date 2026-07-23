@@ -30,6 +30,10 @@ from app.schemas.api_v1 import (
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
+# Cabin classes present in the aircraft configurations. Used to validate
+# operator-supplied inventory uploads.
+VALID_CABIN_CLASSES = {"economy", "premium_economy", "business", "first"}
+
 
 @router.get("/airlines", response_model=ResponseEnvelope[list[AirlineResponse]])
 def list_airlines(
@@ -262,7 +266,20 @@ def load_inventory_csv(
 
         meal_code = row["meal_code"].strip()
         cabin_class = row["cabin_class"].strip().lower()
-        
+
+        # Reject unknown cabins rather than silently creating inventory for a
+        # cabin that does not exist on any aircraft. A typo previously produced
+        # an orphaned row that no passenger could ever order from and that the
+        # waste model would still count.
+        if cabin_class not in VALID_CABIN_CLASSES:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    f"Unknown cabin_class '{cabin_class}'. Must be one of: "
+                    f"{', '.join(sorted(VALID_CABIN_CLASSES))}."
+                ),
+            )
+
         try:
             initial_qty = int(row["initial_qty"])
             restock_alert_qty = int(row.get("restock_alert_qty", 5))
@@ -270,6 +287,14 @@ def load_inventory_csv(
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Quantities must be integers. Found initial_qty={row['initial_qty']}",
+            )
+
+        # Negative stock is not a meaningful uplift and would corrupt every
+        # downstream waste and demand computation.
+        if initial_qty < 0 or restock_alert_qty < 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Quantities must be non-negative. Found initial_qty={initial_qty}.",
             )
 
         meal = db.scalar(select(MealItem).where(MealItem.meal_code == meal_code))
