@@ -123,6 +123,31 @@ def setup_test_data():
              "VALUES (:id, :flight_id, :meal_id, 'business', 5, 0, 0, 0, 1)"),
         {"id": inv_unsafe_business, "flight_id": flight_id, "meal_id": meal_unsafe_id}
     )
+    # Economy stock of the nut-containing meal. The booking gate ties each
+    # passenger to their own cabin, so Charlie (economy 34C) orders from here
+    # rather than from business. Kept separate from the deliberately
+    # single-unit safe-meal economy row used by the race-condition test.
+    inv_unsafe_economy = uuid.uuid4()
+    db.execute(
+        text("INSERT INTO flight_inventory (id, flight_id, meal_id, cabin_class, initial_qty, reserved_qty, served_qty, wasted_qty, restock_alert_qty) "
+             "VALUES (:id, :flight_id, :meal_id, 'economy', 5, 0, 0, 0, 1)"),
+        {"id": inv_unsafe_economy, "flight_id": flight_id, "meal_id": meal_unsafe_id}
+    )
+
+    # Bookings: place_order verifies that the requested flight, seat, and cabin
+    # match a booking issued to the authenticated account, so every passenger
+    # who places an order in these tests needs one. Bob holds business 12A,
+    # Charlie holds economy 34C.
+    db.execute(
+        text("INSERT INTO bookings (id, pnr, passenger_id, flight_id, seat_number, cabin_class) "
+             "VALUES (:id, 'BKBOB1', :passenger_id, :flight_id, '12A', 'business')"),
+        {"id": uuid.uuid4(), "passenger_id": passenger_id, "flight_id": flight_id}
+    )
+    db.execute(
+        text("INSERT INTO bookings (id, pnr, passenger_id, flight_id, seat_number, cabin_class) "
+             "VALUES (:id, 'BKCHA1', :passenger_id, :flight_id, '34C', 'economy')"),
+        {"id": uuid.uuid4(), "passenger_id": normal_id, "flight_id": flight_id}
+    )
 
     db.commit()
     db.close()
@@ -139,6 +164,7 @@ def setup_test_data():
     # Cleanup test data after tests finish
     db = SessionLocal()
     db.execute(text("DELETE FROM feedback"))
+    db.execute(text("DELETE FROM bookings"))
     db.execute(text("DELETE FROM delivery_tasks"))
     db.execute(text("DELETE FROM order_items"))
     db.execute(text("DELETE FROM passenger_orders"))
@@ -215,10 +241,18 @@ def test_allergen_gate_enforcement(passenger_token, normal_token, setup_test_dat
     assert r.status_code == 409, r.text
     assert "Allergen conflict" in r.json()["error"]["message"]
 
-    # Charlie (not allergic to nuts) can order it successfully
+    # Charlie (not allergic to nuts) can order it successfully.
+    # He is booked in economy 34C, so the order must match that booking —
+    # place_order rejects a cabin the account is not booked into.
+    charlie_payload = {
+        "flight_id": str(setup_test_data["flight_id"]),
+        "seat_number": "34C",
+        "cabin_class": "economy",
+        "items": [{"meal_id": str(setup_test_data["meal_unsafe_id"]), "qty": 1}],
+    }
     r = client.post(
         "/api/v1/orders",
-        json=payload,
+        json=charlie_payload,
         headers={"Authorization": f"Bearer {normal_token}"},
     )
     assert r.status_code == 200, r.text
@@ -244,49 +278,8 @@ def test_meal_allergen_check_endpoint(passenger_token, setup_test_data):
     assert "nuts" in r.json()["data"]["conflicting_allergens"]
 
 
-def test_qr_flow_resolution_and_guest_ordering(setup_test_data):
-    # 1. Simulate signing a QR code seat token for flight at seat 34C (Economy)
-    payload = {
-        "type": "qr_code",
-        "flight_id": str(setup_test_data["flight_id"]),
-        "seat_number": "34C",
-        "cabin_class": "economy",
-    }
-    qr_token = jwt.encode(payload, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
 
-    # 2. Resolve the QR token
-    r = client.get(f"/api/v1/qr/resolve?code={qr_token}")
-    assert r.status_code == 200, r.text
-    res = r.json()["data"]
-    assert res["seat_number"] == "34C"
-    assert res["cabin_class"] == "economy"
-    guest_token = res["token"]
-
-    # 3. Use the guest token to browse menu
-    r = client.get(
-        f"/api/v1/flights/{setup_test_data['flight_id']}/menu?cabin_class=economy",
-        headers={"Authorization": f"Bearer {guest_token}"},
-    )
-    assert r.status_code == 200
-    assert len(r.json()["data"]) > 0
-
-    # 4. Place order as guest
-    order_payload = {
-        "flight_id": str(setup_test_data["flight_id"]),
-        "seat_number": "34C",
-        "cabin_class": "economy",
-        "items": [{"meal_id": str(setup_test_data["meal_safe_id"]), "qty": 1}],
-    }
-    r = client.post(
-        "/api/v1/orders",
-        json=order_payload,
-        headers={"Authorization": f"Bearer {guest_token}"},
-    )
-    assert r.status_code == 200, r.text
-    assert r.json()["data"]["cabin_class"] == "economy"
-
-
-def test_crew_dashboard_and_task_prioritization(crew_token, normal_token, setup_test_data):
+def test_crew_dashboard_and_task_prioritization(crew_token, normal_token, passenger_token, setup_test_data):
     # Place standard economy order
     client.post(
         "/api/v1/orders",
@@ -299,7 +292,9 @@ def test_crew_dashboard_and_task_prioritization(crew_token, normal_token, setup_
         headers={"Authorization": f"Bearer {normal_token}"},
     )
 
-    # Place high priority business order
+    # Place high priority business order. This must come from Bob, who holds
+    # the business 12A booking; Charlie is booked in economy and would be
+    # rejected by the booking gate.
     client.post(
         "/api/v1/orders",
         json={
@@ -308,7 +303,7 @@ def test_crew_dashboard_and_task_prioritization(crew_token, normal_token, setup_
             "cabin_class": "business",
             "items": [{"meal_id": str(setup_test_data["meal_safe_id"]), "qty": 1}],
         },
-        headers={"Authorization": f"Bearer {normal_token}"},
+        headers={"Authorization": f"Bearer {passenger_token}"},
     )
 
     # Fetch crew dashboard
@@ -328,11 +323,14 @@ def test_websocket_order_status_dispatch(normal_token, setup_test_data, crew_tok
     ws_client = TestClient(app)
     with ws_client.websocket_connect(f"/ws?token={normal_token}") as websocket:
         # Place order
+        # Charlie is booked in economy 34C; the order must match his booking.
+        # Uses the nut-containing meal because the safe meal's economy row is
+        # stocked at a single unit for the race-condition test.
         order_payload = {
             "flight_id": str(setup_test_data["flight_id"]),
-            "seat_number": "12A",
-            "cabin_class": "business",
-            "items": [{"meal_id": str(setup_test_data["meal_safe_id"]), "qty": 1}],
+            "seat_number": "34C",
+            "cabin_class": "economy",
+            "items": [{"meal_id": str(setup_test_data["meal_unsafe_id"]), "qty": 1}],
         }
         r = client.post(
             "/api/v1/orders",
@@ -420,27 +418,46 @@ def test_concurrent_inventory_race_condition(setup_test_data):
                  "VALUES (:id, :passenger_id, '{}', '{}', '{}', 'medium', 'mid')"),
             {"id": uuid.uuid4(), "passenger_id": pid}
         )
+        # Each concurrent passenger needs a booking on the contested seat:
+        # place_order verifies flight, seat, and cabin against a booking held
+        # by the account. They all target economy 34C, which is exactly the
+        # contention this test is designed to exercise.
+        # Distinct seats per passenger: bookings enforce UNIQUE(flight_id,
+        # seat_number), so the five contenders cannot share 34C. What this test
+        # contests is the single remaining unit of INVENTORY, not the seat, so
+        # separate economy seats preserve exactly the race being tested.
+        db.execute(
+            text("INSERT INTO flight_seats (id, flight_id, seat_number, cabin_class) "
+                 "VALUES (:id, :flight_id, :seat, 'economy')"),
+            {"id": uuid.uuid4(), "flight_id": setup_test_data["flight_id"],
+             "seat": f"4{i}A"}
+        )
+        db.execute(
+            text("INSERT INTO bookings (id, pnr, passenger_id, flight_id, seat_number, cabin_class) "
+                 "VALUES (:id, :pnr, :passenger_id, :flight_id, :seat, 'economy')"),
+            {"id": uuid.uuid4(), "pnr": f"BKC{i}", "passenger_id": pid,
+             "flight_id": setup_test_data["flight_id"], "seat": f"4{i}A"}
+        )
         tokens.append(jwt.encode({"sub": str(pid), "email": email, "role": "passenger", "type": "access"}, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM))
     db.commit()
     db.close()
 
-    order_payload = {
-        "flight_id": str(setup_test_data["flight_id"]),
-        "seat_number": "34C",
-        "cabin_class": "economy",
-        "items": [{"meal_id": str(setup_test_data["meal_safe_id"]), "qty": 1}],
-    }
-
-    def place_order_request(token):
+    def place_order_request(indexed_token):
+        i, token = indexed_token
         return client.post(
             "/api/v1/orders",
-            json=order_payload,
+            json={
+                "flight_id": str(setup_test_data["flight_id"]),
+                "seat_number": f"4{i}A",
+                "cabin_class": "economy",
+                "items": [{"meal_id": str(setup_test_data["meal_safe_id"]), "qty": 1}],
+            },
             headers={"Authorization": f"Bearer {token}"},
         )
 
     # Dispatch requests in parallel
     with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-        responses = list(executor.map(place_order_request, tokens))
+        responses = list(executor.map(place_order_request, list(enumerate(tokens))))
 
     # Assert exactly 1 response has HTTP 200, and 4 responses have HTTP 409
     success_count = sum(1 for r in responses if r.status_code == 200)

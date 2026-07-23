@@ -18,7 +18,9 @@ if TYPE_CHECKING:
 class Passenger(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "passengers"
 
-    pnr: Mapped[str] = mapped_column(String(20), nullable=False, unique=True)
+    # Legacy column. Booking references are authoritative on the bookings
+    # table; nothing reads this. Retained nullable for backward compatibility.
+    pnr: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
     first_name: Mapped[str] = mapped_column(String(100), nullable=False)
     last_name: Mapped[str] = mapped_column(String(100), nullable=False)
     dob: Mapped[Optional[date]] = mapped_column(Date, nullable=True)

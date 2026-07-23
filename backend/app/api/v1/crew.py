@@ -83,12 +83,17 @@ def get_crew_dashboard(
         .all()
     )
 
-    # Sort by priority score desc, then by order creation time desc (newest first)
+    # Sort by priority score descending, then by order creation time descending
+    # as a tiebreak. Priority must dominate: a medical or infant passenger has
+    # to surface above an economy order placed more recently, otherwise the
+    # dashboard silently reorders service away from the priority weighting the
+    # router optimises for. The previous key ordered by (created, pscore),
+    # which made recency dominant and priority a tiebreak only.
     from datetime import datetime, timezone
     def _sort_key(t):
         created = (t.order.created_at if t.order and t.order.created_at else datetime.min.replace(tzinfo=timezone.utc))
         pscore = t.order.priority_score if t.order else 0.0
-        return (created, pscore)
+        return (pscore, created)
     tasks_sorted = sorted(tasks, key=_sort_key, reverse=True)
 
     response_data = []

@@ -1017,7 +1017,15 @@ def _gen_bookings(
         if len(available_idxs) < len(chosen_seats):
             # Not enough unique passengers left; allow reuse across flights beyond this point
             available_idxs = list(range(pool_size))
-        pick = rng.choice(len(available_idxs), size=len(chosen_seats), replace=False)
+        # A flight can have more seats than the entire passenger pool (small test
+        # configurations do exactly this). Sampling without replacement would then
+        # raise, so cap the number of seats filled at the pool size. Real-scale runs
+        # never hit this branch because the pool far exceeds any single cabin.
+        n_pick = min(len(chosen_seats), len(available_idxs))
+        if n_pick == 0:
+            continue
+        chosen_seats = chosen_seats[:n_pick]
+        pick = rng.choice(len(available_idxs), size=n_pick, replace=False)
         picked_idxs = [available_idxs[int(k)] for k in pick]
 
         for seat, p_idx in zip(chosen_seats, picked_idxs):
@@ -1032,21 +1040,26 @@ def _gen_bookings(
                 cabin_class=seat.cabin_class,
             ))
 
-    # Pin the demo booking: AIRMEAL1 -> SV209 -> Y12C (overrides any seat clash).
-    # Remove any booking that grabbed SV209/Y12C or the demo passenger, then add the pin.
-    bookings = [
-        b for b in bookings
-        if not (b.flight_id == SV209_ID and b.seat_number == DEMO_SEAT)
-        and b.passenger_id != demo_passenger.id
-    ]
-    bookings.append(Booking(
-        id=_uid(rng),
-        pnr=DEMO_PNR,
-        passenger_id=demo_passenger.id,
-        flight_id=SV209_ID,
-        seat_number=DEMO_SEAT,
-        cabin_class="economy",
-    ))
+    # Pin the demo booking: SV2K9C -> SV209 -> Y12C (overrides any seat clash).
+    # Remove any booking that grabbed SV209/Y12C or the demo passenger, then add
+    # the pin. SV209 is only generated once the flight count reaches it, so small
+    # configurations (tests) have no such flight and the pin is skipped rather
+    # than inserted against a missing foreign key.
+    _sv209_exists = any(f.id == SV209_ID for f in flights)
+    if _sv209_exists:
+        bookings = [
+            b for b in bookings
+            if not (b.flight_id == SV209_ID and b.seat_number == DEMO_SEAT)
+            and b.passenger_id != demo_passenger.id
+        ]
+        bookings.append(Booking(
+            id=_uid(rng),
+            pnr=DEMO_PNR,
+            passenger_id=demo_passenger.id,
+            flight_id=SV209_ID,
+            seat_number=DEMO_SEAT,
+            cabin_class="economy",
+        ))
 
     db.add_all(bookings)
     db.flush()

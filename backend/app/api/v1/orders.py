@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.core.deps import CurrentUser, get_current_user, require_role
 from app.db.session import get_db
+from app.models.booking import Booking
 from app.models.crew import CrewMember
 from app.models.delivery import DeliveryStatus, DeliveryTask
 from app.models.flight import Flight
@@ -75,6 +76,39 @@ async def place_order(
     Place a new meal order.
     Enforces allergen hard-gate and handles atomic inventory lock reservation.
     """
+    # 0. Booking gate: the order's flight, seat, and cabin must match a booking
+    # issued to THIS account. Without this, flight_id / seat_number /
+    # cabin_class are attacker-controlled: a passenger could order from
+    # first-class inventory by declaring a cabin they are not booked into,
+    # order on a flight they hold no booking for, or direct a delivery to
+    # another passenger's seat. Boarding establishes UI context only; the
+    # booking is the authority, so it is re-checked here at the point of
+    # commitment.
+    booking = db.scalar(
+        select(Booking).where(
+            Booking.passenger_id == current_user.id,
+            Booking.flight_id == payload.flight_id,
+        )
+    )
+    if booking is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have a booking on this flight.",
+        )
+
+    requested_cabin = payload.cabin_class.lower().strip()
+    if booking.cabin_class.lower().strip() != requested_cabin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Your booking is in {booking.cabin_class}, not {requested_cabin}.",
+        )
+
+    if booking.seat_number.strip().upper() != payload.seat_number.strip().upper():
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Your booking is for seat {booking.seat_number}.",
+        )
+
     # 1. Preload all ordered meals with their category (needed by both gates below).
     meal_ids = [item.meal_id for item in payload.items]
     meals = db.scalars(

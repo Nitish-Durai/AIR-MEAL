@@ -95,17 +95,13 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> TokenRe
     if db.scalar(select(Passenger).where(Passenger.email == payload.email)):
         raise HTTPException(status.HTTP_409_CONFLICT, "Email already registered")
 
-    # PNR is not collected at registration anymore (boarding uses the bookings table).
-    # Generate a unique placeholder so the NOT NULL / UNIQUE account column stays valid.
-    account_pnr = (payload.pnr or "").strip().upper()
-    if account_pnr:
-        if db.scalar(select(Passenger).where(Passenger.pnr == account_pnr)):
-            raise HTTPException(status.HTTP_409_CONFLICT, "PNR already registered")
-    else:
-        account_pnr = f"ACCT{uuid.uuid4().hex[:12].upper()}"
-
+    # Booking references live on the bookings table; boarding resolves a PNR
+    # there and verifies both the surname and the account that owns it. The
+    # legacy passengers.pnr column is no longer written at registration — it
+    # was only ever populated with a self-generated placeholder, and keeping
+    # two PNR columns invites a query against the non-authoritative one.
     passenger = Passenger(
-        pnr=account_pnr,
+        pnr=None,
         first_name=payload.first_name,
         last_name=payload.last_name,
         dob=payload.dob,
