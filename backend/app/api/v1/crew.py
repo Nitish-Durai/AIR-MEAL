@@ -9,7 +9,9 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.core.deps import CurrentUser, require_role
 from app.db.session import get_db
+from app.models.crew import CrewMember
 from app.models.delivery import DeliveryStatus, DeliveryTask
+from app.models.flight import Flight
 from app.models.order import OrderItem, OrderStatus, PassengerOrder
 from app.models.passenger import PassengerProfile
 from app.schemas.api_v1 import (
@@ -178,6 +180,25 @@ async def update_task_status(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Order not found",
         )
+
+    # Authorisation: a crew member may only advance tasks on flights operated by
+    # their own airline. Role alone is insufficient — without this, any
+    # authenticated crew account could advance any order on any flight,
+    # including another carrier's. Crew are modelled at airline and zone
+    # granularity rather than by per-flight roster, so airline membership is the
+    # finest-grained check the schema supports; cabin crew also routinely cover
+    # for one another, so a strict per-task assignment rule would not reflect
+    # real operations. Admins are exempt.
+    if current_user.role != "admin":
+        crew_member = db.scalar(
+            select(CrewMember).where(CrewMember.id == current_user.id)
+        )
+        flight = db.scalar(select(Flight).where(Flight.id == order.flight_id))
+        if crew_member is None or flight is None or crew_member.airline_id != flight.airline_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="This task is not on a flight operated by your airline.",
+            )
 
     new_status = payload.status.lower().strip()
 

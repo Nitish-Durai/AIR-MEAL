@@ -314,6 +314,20 @@ def load_inventory_csv(
         )
 
         if inv:
+            # An uplift correction must not fall below what is already
+            # committed. Allowing it would leave reserved + served exceeding
+            # initial_qty, which makes current_stock negative and silently
+            # corrupts every downstream demand and waste computation.
+            committed = inv.reserved_qty + inv.served_qty
+            if initial_qty < committed:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=(
+                        f"Cannot set initial_qty={initial_qty} for '{meal_code}' "
+                        f"in {cabin_class}: {committed} units are already "
+                        f"reserved or served."
+                    ),
+                )
             inv.initial_qty = initial_qty
             inv.restock_alert_qty = restock_alert_qty
         else:

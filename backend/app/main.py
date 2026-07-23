@@ -153,6 +153,35 @@ async def websocket_endpoint(websocket: WebSocket):
         except ValueError:
             pass
 
+    # Authorisation for the flight channel. Order broadcasts carry seat numbers
+    # and meal contents, so a valid token alone must not grant subscription to
+    # an arbitrary flight: a passenger may join only a flight they hold a
+    # booking on, while crew and admin may observe any flight. Without this,
+    # any authenticated account could listen to every cabin in the fleet.
+    if flight_id is not None:
+        role = payload.get("role", "")
+        if role == "passenger":
+            from app.db.session import SessionLocal
+            from app.models.booking import Booking
+            from sqlalchemy import select as _select
+
+            _db = SessionLocal()
+            try:
+                _booking = _db.scalar(
+                    _select(Booking).where(
+                        Booking.passenger_id == user_id,
+                        Booking.flight_id == flight_id,
+                    )
+                )
+            finally:
+                _db.close()
+            if _booking is None:
+                await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+                return
+        elif role not in ("crew", "admin"):
+            await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+            return
+
     # Register active connection
     await manager.connect(websocket, user_id, flight_id)
 

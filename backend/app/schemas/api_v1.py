@@ -3,7 +3,7 @@
 import uuid
 from datetime import date, datetime
 from typing import Any, Generic, Optional, TypeVar
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 # ── Generic Response Envelope ────────────────────────────────────────────────
 T = TypeVar("T")
@@ -48,8 +48,7 @@ class PassengerProfileResponse(BaseModel):
     price_sensitivity: Optional[str] = None
     preference_embedding: Optional[list[float]] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # ── Airline Schemas ──────────────────────────────────────────────────────────
 class AirlineResponse(BaseModel):
@@ -57,8 +56,7 @@ class AirlineResponse(BaseModel):
     name: str
     code: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ── Flight & Seat Schemas ────────────────────────────────────────────────────
@@ -74,8 +72,7 @@ class FlightResponse(BaseModel):
     load_factor: Optional[float] = None
     status: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class FlightCreateRequest(BaseModel):
@@ -108,8 +105,7 @@ class MealItemResponse(BaseModel):
     current_stock: Optional[int] = None
     initial_qty: Optional[int] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class MealAllergenCheckResponse(BaseModel):
@@ -131,8 +127,7 @@ class InventoryItemResponse(BaseModel):
     restock_alert_qty: int
     current_stock: int  # computed property
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class InventoryLoadRequest(BaseModel):
@@ -153,7 +148,7 @@ class OrderCreateRequest(BaseModel):
     flight_id: uuid.UUID
     seat_number: str = Field(min_length=1, max_length=10)
     cabin_class: str = Field(min_length=1, max_length=20)
-    items: list[OrderItemCreate] = Field(min_items=1)
+    items: list[OrderItemCreate] = Field(min_length=1)
     priority_factors: Optional[list[str]] = None  # subset of: "medical","infant","connecting"
 
 
@@ -167,8 +162,7 @@ class OrderItemResponse(BaseModel):
     category_name: Optional[str] = None
     is_alcohol: bool = False
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class OrderResponse(BaseModel):
@@ -184,8 +178,7 @@ class OrderResponse(BaseModel):
     updated_at: datetime
     items: list[OrderItemResponse] = []
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class OrderTrackingResponse(BaseModel):
@@ -220,8 +213,7 @@ class FeedbackResponse(BaseModel):
     free_text: Optional[str] = None
     sentiment_score: Optional[float] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ── QR Access Schemas ────────────────────────────────────────────────────────
@@ -254,8 +246,7 @@ class CrewDashboardTaskResponse(BaseModel):
     priority_factors: list[str] = []
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TaskStatusUpdateRequest(BaseModel):
