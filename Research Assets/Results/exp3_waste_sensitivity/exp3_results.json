@@ -1,116 +1,116 @@
 {
   "experiment": "exp3_waste_sensitivity",
-  "run_at": "2026-07-23T07:36:08.264601+00:00",
+  "run_at": "2026-07-23T11:33:41.774330+00:00",
   "scope": "in_flight flights only (the closed loop does not run elsewhere)",
   "n_flights": 19,
   "n_inventory_rows": 2094,
-  "n_actionable_rows": 179,
+  "n_actionable_rows": 214,
   "total_forecast_waste": 1220.3,
-  "recoverable_waste": 811.45,
-  "committed_waste": 408.85,
-  "actionable_waste": 277.88,
-  "recoverable_pct_of_forecast": 66.5,
-  "committed_pct_of_forecast": 33.5,
-  "actionable_pct_of_forecast": 22.77,
+  "recoverable_waste": 913.56,
+  "committed_waste": 306.74,
+  "actionable_waste": 324.87,
+  "recoverable_pct_of_forecast": 74.86,
+  "committed_pct_of_forecast": 25.14,
+  "actionable_pct_of_forecast": 26.62,
   "efficiency_sweep": [
     {
       "efficiency": 0.5,
-      "waste_removed": 138.94,
-      "residual_forecast": 1081.36,
-      "reduction_pct_of_total": 11.39,
-      "reduction_pct_of_recoverable": 17.12
+      "waste_removed": 162.43,
+      "residual_forecast": 1057.87,
+      "reduction_pct_of_total": 13.31,
+      "reduction_pct_of_recoverable": 17.78
     },
     {
       "efficiency": 0.6,
-      "waste_removed": 166.73,
-      "residual_forecast": 1053.57,
-      "reduction_pct_of_total": 13.66,
-      "reduction_pct_of_recoverable": 20.55
+      "waste_removed": 194.92,
+      "residual_forecast": 1025.38,
+      "reduction_pct_of_total": 15.97,
+      "reduction_pct_of_recoverable": 21.34
     },
     {
       "efficiency": 0.7,
-      "waste_removed": 194.52,
-      "residual_forecast": 1025.79,
-      "reduction_pct_of_total": 15.94,
-      "reduction_pct_of_recoverable": 23.97
+      "waste_removed": 227.41,
+      "residual_forecast": 992.89,
+      "reduction_pct_of_total": 18.64,
+      "reduction_pct_of_recoverable": 24.89
     },
     {
       "efficiency": 0.8,
-      "waste_removed": 222.3,
-      "residual_forecast": 998.0,
-      "reduction_pct_of_total": 18.22,
-      "reduction_pct_of_recoverable": 27.4
+      "waste_removed": 259.89,
+      "residual_forecast": 960.41,
+      "reduction_pct_of_total": 21.3,
+      "reduction_pct_of_recoverable": 28.45
     },
     {
       "efficiency": 0.9,
-      "waste_removed": 250.09,
-      "residual_forecast": 970.21,
-      "reduction_pct_of_total": 20.49,
-      "reduction_pct_of_recoverable": 30.82
+      "waste_removed": 292.38,
+      "residual_forecast": 927.92,
+      "reduction_pct_of_total": 23.96,
+      "reduction_pct_of_recoverable": 32.0
     },
     {
       "efficiency": 1.0,
-      "waste_removed": 277.88,
-      "residual_forecast": 942.42,
-      "reduction_pct_of_total": 22.77,
-      "reduction_pct_of_recoverable": 34.24
+      "waste_removed": 324.87,
+      "residual_forecast": 895.43,
+      "reduction_pct_of_total": 26.62,
+      "reduction_pct_of_recoverable": 35.56
     }
   ],
   "production_efficiency": 0.8,
-  "production_reduction_pct": 18.22,
+  "production_reduction_pct": 21.3,
   "reduction_band_pct": [
-    11.39,
-    22.77
+    13.31,
+    26.62
   ],
   "by_category": [
     {
       "category": "Beverages",
       "inventory_rows": 663,
       "forecast_waste": 482.89,
-      "recoverable": 306.1,
-      "committed": 176.79,
-      "actionable": 140.1,
-      "recoverable_pct": 63.39,
+      "recoverable": 360.99,
+      "committed": 121.9,
+      "actionable": 171.4,
+      "recoverable_pct": 74.76,
       "share_of_total_forecast_pct": 39.57
     },
     {
       "category": "Desserts",
       "inventory_rows": 363,
       "forecast_waste": 240.83,
-      "recoverable": 179.53,
-      "committed": 61.3,
-      "actionable": 68.31,
-      "recoverable_pct": 74.55,
+      "recoverable": 195.53,
+      "committed": 45.3,
+      "actionable": 80.94,
+      "recoverable_pct": 81.19,
       "share_of_total_forecast_pct": 19.74
     },
     {
       "category": "Snacks",
       "inventory_rows": 357,
       "forecast_waste": 198.21,
-      "recoverable": 113.04,
-      "committed": 85.17,
-      "actionable": 24.38,
-      "recoverable_pct": 57.03,
+      "recoverable": 124.53,
+      "committed": 73.68,
+      "actionable": 28.13,
+      "recoverable_pct": 62.83,
       "share_of_total_forecast_pct": 16.24
     },
     {
       "category": "Starters",
       "inventory_rows": 347,
       "forecast_waste": 166.32,
-      "recoverable": 133.1,
-      "committed": 33.22,
-      "actionable": 30.99,
-      "recoverable_pct": 80.03,
+      "recoverable": 136.89,
+      "committed": 29.43,
+      "actionable": 27.46,
+      "recoverable_pct": 82.31,
       "share_of_total_forecast_pct": 13.63
     },
     {
       "category": "Main Course",
       "inventory_rows": 364,
       "forecast_waste": 132.05,
-      "recoverable": 79.69,
-      "committed": 52.37,
-      "actionable": 14.1,
-      "recoverable_pct": 60.34,
+      "recoverable": 95.62,
+      "committed": 36.43,
+      "actionable": 16.94,
+      "recoverable_pct": 72.41,
       "share_of_total_forecast_pct": 10.82
     }
   ],

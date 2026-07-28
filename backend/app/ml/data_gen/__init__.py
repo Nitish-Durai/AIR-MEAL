@@ -652,9 +652,43 @@ def _gen_orders_tasks_feedback(
         digits = "".join(ch for ch in seat if ch.isdigit())
         return int(digits) if digits else 0
 
-    ORDER_RATE = 0.70          # fraction of assigned passengers who place an order
+    ORDER_RATE = 0.70          # eventual fraction of passengers who order, once
+                               # meal service on a flight has completed
     ITEMS_PER_ORDER = (1, 2)   # uniform range
     FEEDBACK_RATE = 0.80       # fraction of delivered orders that have feedback
+
+    # ── Service progress ──────────────────────────────────────────────────
+    # Orders are not placed uniformly across the fleet: they accumulate as a
+    # passenger moves through their journey. Ordering opens when the cabin is
+    # boarding and completes when meal service ends, partway into the sector.
+    # A flight is therefore only as depleted as its position in that window.
+    #
+    # Applying one flat rate to every flight reserved stock against departures
+    # that were still days away, leaving scheduled cabins a third sold out
+    # before anyone had boarded — an artefact of the generator, not of demand.
+    ORDER_WINDOW_OPENS_H = 0.75    # ordering opens 45 min before departure
+    SERVICE_ENDS_FRACTION = 0.50   # meal service completes at 50% of the sector
+
+    def _service_progress(flight) -> float:
+        """Fraction of this flight's eventual orders that have been placed."""
+        dep, arr = flight.dep_time, flight.arr_time
+        if dep is None or arr is None:
+            return 1.0
+        now = _reference_now()
+        opens = dep - timedelta(hours=ORDER_WINDOW_OPENS_H)
+        duration_h = (arr - dep).total_seconds() / 3600.0
+        closes = dep + timedelta(hours=duration_h * SERVICE_ENDS_FRACTION)
+        if now <= opens:
+            return 0.0
+        if now >= closes:
+            return 1.0
+        span = (closes - opens).total_seconds()
+        if span <= 0:
+            return 1.0
+        linear = (now - opens).total_seconds() / span
+        # Ease-in: uptake is slow while boarding and accelerates once the
+        # service itself begins, rather than climbing linearly from pushback.
+        return float(linear ** 2)
 
     # Pre-build lookup: stocked meal IDs per (flight_id, cabin_class)
     stocked: dict[tuple, list[MealItem]] = {}
@@ -733,8 +767,9 @@ def _gen_orders_tasks_feedback(
         if not serving_crew:
             serving_crew = flight_crew  # fallback if roles differ
 
+        _effective_order_rate = ORDER_RATE * _service_progress(flight)
         for p_idx in assigned_idxs:
-            if rng.random() > ORDER_RATE:
+            if rng.random() > _effective_order_rate:
                 continue
 
             passenger = passenger_pool[int(p_idx)]
